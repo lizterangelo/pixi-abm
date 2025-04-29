@@ -1,6 +1,9 @@
-import { Application, extend, useApplication, useTick } from "@pixi/react";
-import { Assets, Container, Sprite, Texture } from "pixi.js";
-import { useEffect, useRef, useState } from "react";
+import { Application, extend } from "@pixi/react";
+import { Container, Sprite } from "pixi.js";
+import { AgentScene } from "./agents/AgentScene";
+import { useEnvironment } from "./environment/EnvironmentContext";
+import { createRiver } from "./environment/River";
+import { EnvironmentProvider } from "./environment/EnvironmentContext";
 
 // extend tells @pixi/react what Pixi.js components are available
 extend({
@@ -8,116 +11,108 @@ extend({
   Sprite,
 });
 
-const BunnySprite = ({ x, y }: { x: number; y: number }) => {
-  const spriteRef = useRef<Sprite>(null);
-  const [texture, setTexture] = useState(Texture.EMPTY);
+const RiverControls = () => {
+  const { river, setRiver } = useEnvironment();
 
-  // Preload the sprite if it hasn't been loaded yet
-  useEffect(() => {
-    if (texture === Texture.EMPTY) {
-      Assets.load("/assets/bunny.png").then((result) => {
-        setTexture(result);
-      });
-    }
-  }, [texture]);
+  const handleFlowDirectionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const direction = parseFloat(e.target.value);
+    setRiver({ ...river, flowDirection: direction });
+  };
 
-  // Listen for animate update
-  useTick((ticker) => {
-    if (!spriteRef.current) return;
-    // Just for fun, let's rotate mr rabbit a little.
-    // * Delta is 1 if running at 100% performance *
-    // * Creates frame-independent transformation *
-    spriteRef.current.rotation += 0.1 * ticker.deltaTime;
-  });
+  const handleFlowRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rate = parseFloat(e.target.value);
+    setRiver({ ...river, flowRate: rate });
+  };
 
   return (
-    <pixiSprite
-      ref={spriteRef}
-      texture={texture}
-      anchor={0.5}
-      x={x}
-      y={y}
-    />
+    <div style={{ 
+      position: "absolute", 
+      top: 10, 
+      right: 10, 
+      zIndex: 100,
+      backgroundColor: "rgba(255, 255, 255, 0.8)",
+      padding: "10px",
+      borderRadius: "5px"
+    }}>
+      <h3 style={{ margin: "0 0 10px 0" }}>River Controls</h3>
+      <div style={{ marginBottom: "10px" }}>
+        <label>Flow Direction (radians): </label>
+        <input 
+          type="range" 
+          min="0" 
+          max="6.28" 
+          step="0.1" 
+          value={river.flowDirection} 
+          onChange={handleFlowDirectionChange}
+        />
+        <span> {river.flowDirection.toFixed(2)}</span>
+      </div>
+      <div>
+        <label>Flow Rate: </label>
+        <input 
+          type="range" 
+          min="0" 
+          max="200" 
+          step="10" 
+          value={river.flowRate} 
+          onChange={handleFlowRateChange}
+        />
+        <span> {river.flowRate}</span>
+      </div>
+    </div>
   );
 };
 
-const BunnyScene = () => {
-  const { app } = useApplication();
-  const [bunnies, setBunnies] = useState<{ id: number; x: number; y: number }[]>([]);
-  const [idCounter, setIdCounter] = useState(0);
-
-  // Add the first bunny in the center when the app loads
-  useEffect(() => {
-    if (!app) return;
-    
-    setBunnies([{ id: 0, x: app.screen.width / 2, y: app.screen.height / 2 }]);
-    setIdCounter(1);
-  }, [app]);
-
-  // Function to add a bunny that we'll expose to parent
-  const addBunny = () => {
-    if (!app) return;
-    
-    const x = Math.random() * app.screen.width;
-    const y = Math.random() * app.screen.height;
-    
-    setBunnies([...bunnies, { id: idCounter, x, y }]);
-    setIdCounter(idCounter + 1);
-  };
-
-  // Function to reset bunnies that we'll expose to parent
-  const resetBunnies = () => {
-    setBunnies([]);
-  };
-
-  // Make these functions available to the parent
-  useEffect(() => {
-    if (window) {
-      // @ts-ignore
-      window.addBunny = addBunny;
-      // @ts-ignore
-      window.resetBunnies = resetBunnies;
-    }
-  }, [app, bunnies, idCounter]);
-
-  return (
-    <>
-      {bunnies.map((bunny) => (
-        <BunnySprite key={bunny.id} x={bunny.x} y={bunny.y} />
-      ))}
-    </>
-  );
-};
-
-export default function App() {
+const AgentControls = () => {
   const handleAddBunny = () => {
     // @ts-ignore
     if (window.addBunny) window.addBunny();
   };
 
+  const handleAddFish = () => {
+    // @ts-ignore
+    if (window.addFish) window.addFish();
+  };
+
   const handleReset = () => {
     // @ts-ignore
-    if (window.resetBunnies) window.resetBunnies();
+    if (window.resetAgents) window.resetAgents();
   };
 
   return (
+    <div style={{ 
+      position: "absolute", 
+      top: 10, 
+      left: 10, 
+      zIndex: 100,
+      display: "flex",
+      gap: 10
+    }}>
+      <button onClick={handleAddBunny} style={buttonStyle}>Add Bunny</button>
+      <button onClick={handleAddFish} style={buttonStyle}>Add Fish</button>
+      <button onClick={handleReset} style={buttonStyle}>Reset</button>
+    </div>
+  );
+};
+
+const AppContent = () => {
+  return (
     <div style={{ position: "relative" }}>
-      <div style={{ 
-        position: "absolute", 
-        top: 10, 
-        left: 10, 
-        zIndex: 100,
-        display: "flex",
-        gap: 10
-      }}>
-        <button onClick={handleAddBunny} style={buttonStyle}>Add Bunny</button>
-        <button onClick={handleReset} style={buttonStyle}>Reset</button>
-      </div>
+      <AgentControls />
+      <RiverControls />
       
       <Application background={"#1099bb"} resizeTo={window}>
-        <BunnyScene />
+        <AgentScene />
       </Application>
     </div>
+  );
+};
+
+export default function App() {
+  return (
+    <EnvironmentProvider>
+      <AppContent />
+    </EnvironmentProvider>
   );
 }
 
