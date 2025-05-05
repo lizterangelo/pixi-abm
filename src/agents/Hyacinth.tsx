@@ -3,29 +3,35 @@ import { useEffect, useRef, useState } from "react";
 import { useTick } from "@pixi/react";
 import { useEnvironment } from "../environment/EnvironmentContext";
 
-export interface Bunny {
+export interface Hyacinth {
   id: number;
   x: number;
   y: number;
   rotationSpeed: number;
-  resistance: number; // How much the bunny resists the river flow (0-1)
+  resistance: number; // How much the hyacinth resists the river flow (0-1)
 }
 
-interface BunnySpriteProps {
-  bunny: Bunny;
+interface HyacinthSpriteProps {
+  hyacinth: Hyacinth;
   onPositionChange: (id: number, x: number, y: number) => void;
 }
 
-export const BunnySprite = ({ bunny, onPositionChange }: BunnySpriteProps) => {
+export const HyacinthSprite = ({ hyacinth, onPositionChange }: HyacinthSpriteProps) => {
   const spriteRef = useRef<Sprite>(null);
   const [texture, setTexture] = useState(Texture.EMPTY);
   const { river } = useEnvironment();
+  const [spriteSize, setSpriteSize] = useState({ width: 0, height: 0 });
 
   // Preload the sprite if it hasn't been loaded yet
   useEffect(() => {
     if (texture === Texture.EMPTY) {
-      Assets.load("/assets/bunny.png").then((result: Texture) => {
+      Assets.load("/assets/waterhyacinth.png").then((result: Texture) => {
         setTexture(result);
+        // Store original dimensions
+        setSpriteSize({
+          width: result.width * 0.1, // Scaled down size
+          height: result.height * 0.1, // Scaled down size
+        });
       });
     }
   }, [texture]);
@@ -38,19 +44,18 @@ export const BunnySprite = ({ bunny, onPositionChange }: BunnySpriteProps) => {
     const riverFlowX = Math.cos(river.flowDirection) * river.flowRate * ticker.deltaTime;
     const riverFlowY = Math.sin(river.flowDirection) * river.flowRate * ticker.deltaTime;
     
-    // Bunny rotates at its own speed
-    spriteRef.current.rotation += bunny.rotationSpeed * ticker.deltaTime;
+    // Hyacinth doesn't rotate
     
     // Calculate new position with river flow
-    const newX = bunny.x + riverFlowX * (1 - bunny.resistance);
-    const newY = bunny.y + riverFlowY * (1 - bunny.resistance);
+    const newX = hyacinth.x + riverFlowX * (1 - hyacinth.resistance);
+    const newY = hyacinth.y + riverFlowY * (1 - hyacinth.resistance);
     
     // Update sprite position
     spriteRef.current.x = newX;
     spriteRef.current.y = newY;
     
-    // Update bunny position in state
-    onPositionChange(bunny.id, newX, newY);
+    // Update hyacinth position in state
+    onPositionChange(hyacinth.id, newX, newY);
   });
 
   return (
@@ -58,8 +63,10 @@ export const BunnySprite = ({ bunny, onPositionChange }: BunnySpriteProps) => {
       ref={spriteRef}
       texture={texture}
       anchor={0.5}
-      x={bunny.x}
-      y={bunny.y}
+      x={hyacinth.x}
+      y={hyacinth.y}
+      width={spriteSize.width}
+      height={spriteSize.height}
     />
   );
 }; 

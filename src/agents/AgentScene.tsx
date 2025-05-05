@@ -1,44 +1,44 @@
 import { useApplication } from "@pixi/react";
 import { useEffect, useState } from "react";
-import { Bunny, BunnySprite } from "./Bunny";
+import { Hyacinth, HyacinthSprite } from "./Hyacinth";
 import { Fish, FishSprite } from "./Fish";
 
 export const AgentScene = () => {
   const { app } = useApplication();
-  const [bunnies, setBunnies] = useState<Bunny[]>([]);
+  const [hyacinths, setHyacinths] = useState<Hyacinth[]>([]);
   const [fish, setFish] = useState<Fish[]>([]);
-  const [bunnyIdCounter, setBunnyIdCounter] = useState(0);
+  const [hyacinthIdCounter, setHyacinthIdCounter] = useState(0);
   const [fishIdCounter, setFishIdCounter] = useState(0);
 
-  // Add the first bunny in the center when the app loads
+  // Add the first hyacinth in the center when the app loads
   useEffect(() => {
     if (!app) return;
     
-    setBunnies([{ 
+    setHyacinths([{ 
       id: 0, 
       x: app.screen.width / 2, 
       y: app.screen.height / 2,
       rotationSpeed: 0.1,
       resistance: 0.5 // Add resistance property
     }]);
-    setBunnyIdCounter(1);
+    setHyacinthIdCounter(1);
   }, [app]);
 
-  // Function to add a bunny
-  const addBunny = () => {
+  // Function to add a hyacinth
+  const addHyacinth = () => {
     if (!app) return;
     
     const x = Math.random() * app.screen.width;
     const y = Math.random() * app.screen.height;
     
-    setBunnies([...bunnies, { 
-      id: bunnyIdCounter, 
+    setHyacinths([...hyacinths, { 
+      id: hyacinthIdCounter, 
       x, 
       y,
       rotationSpeed: 0.1,
       resistance: Math.random() * 0.5 + 0.5 // Random resistance between 0.5 and 1.0
     }]);
-    setBunnyIdCounter(bunnyIdCounter + 1);
+    setHyacinthIdCounter(hyacinthIdCounter + 1);
   };
 
   // Function to add a fish
@@ -60,15 +60,15 @@ export const AgentScene = () => {
 
   // Function to reset all agents
   const resetAgents = () => {
-    setBunnies([]);
+    setHyacinths([]);
     setFish([]);
   };
 
-  // Handle bunny position updates
-  const handleBunnyPositionChange = (id: number, x: number, y: number) => {
-    setBunnies(currentBunnies => 
-      currentBunnies.map(bunny => 
-        bunny.id === id ? { ...bunny, x, y } : bunny
+  // Handle hyacinth position updates
+  const handleHyacinthPositionChange = (id: number, x: number, y: number) => {
+    setHyacinths(currentHyacinths => 
+      currentHyacinths.map(hyacinth => 
+        hyacinth.id === id ? { ...hyacinth, x, y } : hyacinth
       )
     );
   };
@@ -86,21 +86,21 @@ export const AgentScene = () => {
   useEffect(() => {
     if (window) {
       // @ts-ignore
-      window.addBunny = addBunny;
+      window.addHyacinth = addHyacinth;
       // @ts-ignore
       window.addFish = addFish;
       // @ts-ignore
       window.resetAgents = resetAgents;
     }
-  }, [app, bunnies, fish, bunnyIdCounter, fishIdCounter]);
+  }, [app, hyacinths, fish, hyacinthIdCounter, fishIdCounter]);
 
   return (
     <>
-      {bunnies.map(bunny => (
-        <BunnySprite 
-          key={bunny.id} 
-          bunny={bunny} 
-          onPositionChange={handleBunnyPositionChange}
+      {hyacinths.map(hyacinth => (
+        <HyacinthSprite 
+          key={hyacinth.id} 
+          hyacinth={hyacinth} 
+          onPositionChange={handleHyacinthPositionChange}
         />
       ))}
       {fish.map(fish => (

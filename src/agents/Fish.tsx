@@ -20,12 +20,18 @@ export const FishSprite = ({ fish, onPositionChange }: FishSpriteProps) => {
   const spriteRef = useRef<Sprite>(null);
   const [texture, setTexture] = useState(Texture.EMPTY);
   const { river } = useEnvironment();
+  const [spriteSize, setSpriteSize] = useState({ width: 0, height: 0 });
 
   // Preload the sprite if it hasn't been loaded yet
   useEffect(() => {
     if (texture === Texture.EMPTY) {
       Assets.load("/assets/fish.png").then((result: Texture) => {
         setTexture(result);
+        // Store dimensions with reduced size
+        setSpriteSize({
+          width: result.width * 0.4, // Scaled down size
+          height: result.height * 0.4, // Scaled down size
+        });
       });
     }
   }, [texture]);
@@ -38,8 +44,7 @@ export const FishSprite = ({ fish, onPositionChange }: FishSpriteProps) => {
     const riverFlowX = Math.cos(river.flowDirection) * river.flowRate * ticker.deltaTime;
     const riverFlowY = Math.sin(river.flowDirection) * river.flowRate * ticker.deltaTime;
     
-    // Fish rotates at its own speed
-    spriteRef.current.rotation += fish.rotationSpeed * ticker.deltaTime;
+    // Fish no longer rotates
     
     // Calculate new position with river flow
     const newX = fish.x + riverFlowX * (1 - fish.resistance);
@@ -60,6 +65,8 @@ export const FishSprite = ({ fish, onPositionChange }: FishSpriteProps) => {
       anchor={0.5}
       x={fish.x}
       y={fish.y}
+      width={spriteSize.width}
+      height={spriteSize.height}
     />
   );
 }; 

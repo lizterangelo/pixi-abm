@@ -4,6 +4,7 @@ import { AgentScene } from "./agents/AgentScene";
 import { useEnvironment } from "./environment/EnvironmentContext";
 import { createRiver } from "./environment/River";
 import { EnvironmentProvider } from "./environment/EnvironmentContext";
+import { useRef, useEffect } from "react";
 
 // extend tells @pixi/react what Pixi.js components are available
 extend({
@@ -26,13 +27,11 @@ const RiverControls = () => {
 
   return (
     <div style={{ 
-      position: "absolute", 
-      top: 10, 
-      right: 10, 
-      zIndex: 100,
       backgroundColor: "rgba(255, 255, 255, 0.8)",
       padding: "10px",
-      borderRadius: "5px"
+      borderRadius: "5px",
+      border: "1px solid #ccc",
+      boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
     }}>
       <h3 style={{ margin: "0 0 10px 0" }}>River Controls</h3>
       <div style={{ marginBottom: "10px" }}>
@@ -64,9 +63,9 @@ const RiverControls = () => {
 };
 
 const AgentControls = () => {
-  const handleAddBunny = () => {
+  const handleAddHyacinth = () => {
     // @ts-ignore
-    if (window.addBunny) window.addBunny();
+    if (window.addHyacinth) window.addHyacinth();
   };
 
   const handleAddFish = () => {
@@ -81,14 +80,15 @@ const AgentControls = () => {
 
   return (
     <div style={{ 
-      position: "absolute", 
-      top: 10, 
-      left: 10, 
-      zIndex: 100,
+      backgroundColor: "rgba(255, 255, 255, 0.8)",
+      padding: "10px",
+      borderRadius: "5px",
       display: "flex",
-      gap: 10
+      gap: 10,
+      border: "1px solid #ccc",
+      boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
     }}>
-      <button onClick={handleAddBunny} style={buttonStyle}>Add Bunny</button>
+      <button onClick={handleAddHyacinth} style={buttonStyle}>Add Water Hyacinth</button>
       <button onClick={handleAddFish} style={buttonStyle}>Add Fish</button>
       <button onClick={handleReset} style={buttonStyle}>Reset</button>
     </div>
@@ -96,14 +96,44 @@ const AgentControls = () => {
 };
 
 const AppContent = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  
   return (
-    <div style={{ position: "relative" }}>
-      <AgentControls />
-      <RiverControls />
+    <div style={{ 
+      display: "flex", 
+      flexDirection: "column", 
+      padding: "20px", 
+      gap: "20px", 
+      height: "100vh", 
+      boxSizing: "border-box" 
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <AgentControls />
+        <RiverControls />
+      </div>
       
-      <Application background={"#1099bb"} resizeTo={window}>
-        <AgentScene />
-      </Application>
+      <div 
+        ref={containerRef}
+        style={{ 
+          flex: 1, 
+          border: "2px solid #666", 
+          borderRadius: "8px", 
+          overflow: "hidden",
+          boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+          position: "relative",
+          display: "flex"
+        }}
+      >
+        <div style={{ position: "absolute", width: "100%", height: "100%" }}>
+          <Application 
+            background={"#1099bb"} 
+            resizeTo={containerRef}
+            autoDensity={true}
+          >
+            <AgentScene />
+          </Application>
+        </div>
+      </div>
     </div>
   );
 };
