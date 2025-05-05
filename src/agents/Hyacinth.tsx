@@ -16,6 +16,9 @@ interface HyacinthSpriteProps {
   onPositionChange: (id: number, x: number, y: number) => void;
 }
 
+// Create a global reference to the hyacinth size that can be used by other components
+export const HYACINTH_SIZE = { width: 0, height: 0 };
+
 export const HyacinthSprite = ({ hyacinth, onPositionChange }: HyacinthSpriteProps) => {
   const spriteRef = useRef<Sprite>(null);
   const [texture, setTexture] = useState(Texture.EMPTY);
@@ -27,11 +30,19 @@ export const HyacinthSprite = ({ hyacinth, onPositionChange }: HyacinthSpritePro
     if (texture === Texture.EMPTY) {
       Assets.load("/assets/waterhyacinth.png").then((result: Texture) => {
         setTexture(result);
-        // Store original dimensions
+        
+        // Calculate and store dimensions
+        const width = result.width * 0.1; // Scaled down size
+        const height = result.height * 0.1; // Scaled down size
+        
         setSpriteSize({
-          width: result.width * 0.1, // Scaled down size
-          height: result.height * 0.1, // Scaled down size
+          width,
+          height,
         });
+        
+        // Update the global reference for other components to use
+        HYACINTH_SIZE.width = width;
+        HYACINTH_SIZE.height = height;
       });
     }
   }, [texture]);

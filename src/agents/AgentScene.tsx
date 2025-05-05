@@ -1,6 +1,6 @@
 import { useApplication } from "@pixi/react";
-import { useEffect, useState } from "react";
-import { Hyacinth, HyacinthSprite } from "./Hyacinth";
+import { useEffect, useState, useRef } from "react";
+import { Hyacinth, HyacinthSprite, HYACINTH_SIZE } from "./Hyacinth";
 import { Fish, FishSprite } from "./Fish";
 
 export const AgentScene = () => {
@@ -24,21 +24,67 @@ export const AgentScene = () => {
     setHyacinthIdCounter(1);
   }, [app]);
 
+  // Check if a position overlaps with existing hyacinths
+  const checkOverlap = (x: number, y: number, minDistance: number): boolean => {
+    return hyacinths.some(hyacinth => {
+      const dx = hyacinth.x - x;
+      const dy = hyacinth.y - y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      return distance < minDistance;
+    });
+  };
+
   // Function to add a hyacinth
   const addHyacinth = () => {
     if (!app) return;
     
-    const x = Math.random() * app.screen.width;
-    const y = Math.random() * app.screen.height;
+    // Get the current size from the shared constant
+    const size = Math.max(HYACINTH_SIZE.width, HYACINTH_SIZE.height);
     
-    setHyacinths([...hyacinths, { 
-      id: hyacinthIdCounter, 
-      x, 
-      y,
-      rotationSpeed: 0.1,
-      resistance: Math.random() * 0.5 + 0.5 // Random resistance between 0.5 and 1.0
-    }]);
-    setHyacinthIdCounter(hyacinthIdCounter + 1);
+    // Allow for some overlap considering transparency
+    // We can use a smaller distance factor since there's transparent space around the actual plant
+    // 0.7 means we allow about 30% overlap between the images (mostly transparent areas)
+    const overlapFactor = 0.7; 
+    const minDistance = size > 0 ? size * overlapFactor : 20; // Fallback if size not initialized yet
+    
+    // Try to find a position that doesn't overlap too much (max 50 attempts)
+    let x, y;
+    let attempts = 0;
+    let foundValidPosition = false;
+    
+    while (!foundValidPosition && attempts < 50) {
+      x = Math.random() * app.screen.width;
+      y = Math.random() * app.screen.height;
+      
+      // Keep hyacinths away from edges
+      const edgePadding = size / 2 || 15; // Fallback if size not initialized yet
+      x = Math.max(edgePadding, Math.min(app.screen.width - edgePadding, x));
+      y = Math.max(edgePadding, Math.min(app.screen.height - edgePadding, y));
+      
+      if (!checkOverlap(x, y, minDistance)) {
+        foundValidPosition = true;
+      }
+      
+      attempts++;
+    }
+    
+    // If we couldn't find a good position after max attempts, use the last attempted position
+    // This ensures we can keep adding hyacinths even when the screen gets crowded
+    if (!foundValidPosition && attempts >= 50) {
+      foundValidPosition = true;
+    }
+    
+    // Add the hyacinth
+    if (foundValidPosition) {
+      setHyacinths([...hyacinths, { 
+        id: hyacinthIdCounter, 
+        x: x!, 
+        y: y!,
+        rotationSpeed: 0.1,
+        resistance: Math.random() * 0.5 + 0.5 // Random resistance between 0.5 and 1.0
+      }]);
+      setHyacinthIdCounter(hyacinthIdCounter + 1);
+    }
   };
 
   // Function to add a fish
