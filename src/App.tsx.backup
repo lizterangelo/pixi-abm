@@ -29,7 +29,7 @@ const NutrientsDisplay = ({ totalNutrients }: { totalNutrients: number }) => {
       fontWeight: "bold",
       color: "#2E7D32"
     }}>
-      🌱 Nutrients: {totalNutrients.toFixed(1)} kg
+      🌱 Nutrients: {totalNutrients.toFixed(1)}
     </div>
   );
 };

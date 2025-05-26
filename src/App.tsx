@@ -687,7 +687,7 @@ const RiverControls = ({
       </div>
       <div style={{ marginBottom: "6px" }}>
         <label style={{ color: "black", fontSize: "11px" }}>
-          Nutrients (kg):{" "}
+          Nutrients:{" "}
         </label>
         <input
           type="range"
