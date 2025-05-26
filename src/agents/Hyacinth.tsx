@@ -16,6 +16,7 @@ export interface Hyacinth {
   resistance: number; // How much the hyacinth resists the river flow (0-1)
   biomass: number; // Current biomass of the hyacinth (starts at initial value, grows over time)
   nur: number; // Nutrient Uptake Rate in kg/day (0.01-0.05)
+  pol: number; // Pollution absorbed per second (0.1-0.5% per second)
   growthRate: number; // Current growth rate (calculated from environmental factors)
   parent: number | null; // ID of parent hyacinth (null if original)
   daughters: number[]; // Array of daughter hyacinth IDs
@@ -103,6 +104,7 @@ export const HyacinthSprite = ({ hyacinth, allHyacinths, river, onPositionChange
   const [spriteSize, setSpriteSize] = useState({ width: 0, height: 0 });
   const { app } = useApplication();
   const lastGrowthUpdateRef = useRef<number>(0);
+  const floatingTimeRef = useRef<number>(0); // For floating animation
 
   // Preload the sprite and update size when biomass changes
   useEffect(() => {
@@ -134,6 +136,9 @@ export const HyacinthSprite = ({ hyacinth, allHyacinths, river, onPositionChange
   // Listen for animate update
   useTick((ticker) => {
     if (!spriteRef.current || !app) return;
+    
+    // Update floating animation time
+    floatingTimeRef.current += ticker.deltaTime * 0.02; // Slow floating speed
     
     // Handle biomass growth every second
     lastGrowthUpdateRef.current += ticker.deltaTime / 60; // Convert to seconds
@@ -278,6 +283,10 @@ export const HyacinthSprite = ({ hyacinth, allHyacinths, river, onPositionChange
     // Update sprite position
     spriteRef.current.x = newX;
     spriteRef.current.y = newY;
+    
+    // Add floating effect - gentle bobbing motion
+    const floatingOffset = Math.sin(floatingTimeRef.current + hyacinth.id * 0.5) * 2; // 2 pixel amplitude, phase offset by ID
+    spriteRef.current.y += floatingOffset;
     
     // Update hyacinth position in state
     onPositionChange(hyacinth.id, newX, newY);

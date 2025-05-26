@@ -4,6 +4,7 @@ export interface River {
   totalNutrients: number; // total nutrients in kg
   temperature: number; // temperature in °C (25-35°C)
   sunlight: number; // sunlight scale (0.0-1.0)
+  pollutionLevel: number; // pollution level as percentage (0-100%)
 }
 
 // Singleton river instance
@@ -13,10 +14,11 @@ export const createRiver = (): River => {
   if (!riverInstance) {
     riverInstance = {
       flowDirection: 0,
-      flowRate: 50,
+      flowRate: 0,
       totalNutrients: 100.0, // Starting with 100 kg of nutrients
       temperature: 30, // Default temperature 30°C
-      sunlight: 0.8 // Default sunlight 0.8 (80%)
+      sunlight: 0.8, // Default sunlight 0.8 (80%)
+      pollutionLevel: 0 // Default pollution level 0%
     };
   }
   return riverInstance;
@@ -40,10 +42,11 @@ export const updateRiver = (updates: Partial<River>): River => {
 export const resetRiver = (): River => {
   riverInstance = {
     flowDirection: 0,
-    flowRate: 50,
+    flowRate: 0,
     totalNutrients: 100.0, // Reset to starting nutrients
     temperature: 30, // Reset temperature
-    sunlight: 0.8 // Reset sunlight
+    sunlight: 0.8, // Reset sunlight
+    pollutionLevel: 0 // Reset pollution level
   };
   return riverInstance;
 };
@@ -75,11 +78,17 @@ export const createRiverControls = (river: River, setRiver: (river: River) => vo
     setRiver(updatedRiver);
   };
 
+  const handlePollutionChange = (pollution: number) => {
+    const updatedRiver = updateRiver({ pollutionLevel: pollution });
+    setRiver(updatedRiver);
+  };
+
   return {
     handleFlowDirectionChange,
     handleFlowRateChange,
     handleNutrientsChange,
     handleTemperatureChange,
-    handleSunlightChange
+    handleSunlightChange,
+    handlePollutionChange
   };
 }; 

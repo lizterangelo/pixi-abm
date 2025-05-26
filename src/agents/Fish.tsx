@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTick } from "@pixi/react";
 import { useApplication } from "@pixi/react";
 import { River } from "../environment/River";
+import { Hyacinth } from "./Hyacinth";
 
 export interface Fish {
   id: number;
@@ -15,20 +16,24 @@ export interface Fish {
   targetX?: number; // Target X position
   targetY?: number; // Target Y position
   movementTimer?: number; // Timer for movement changes
+  touchingHyacinth?: boolean; // Whether the fish is currently touching a hyacinth
 }
 
 interface FishSpriteProps {
   fish: Fish;
+  allHyacinths: Hyacinth[];
   river: River;
   onPositionChange: (id: number, x: number, y: number) => void;
+  onTouchingHyacinthChange: (id: number, touching: boolean) => void;
 }
 
-export const FishSprite = ({ fish, river, onPositionChange }: FishSpriteProps) => {
+export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouchingHyacinthChange }: FishSpriteProps) => {
   const spriteRef = useRef<Sprite>(null);
   const [texture, setTexture] = useState(Texture.EMPTY);
   const [spriteSize, setSpriteSize] = useState({ width: 0, height: 0 });
   const [fishState, setFishState] = useState<Fish>({...fish, vx: 0, vy: 0, movementTimer: 0});
   const { app } = useApplication();
+  const floatingTimeRef = useRef<number>(0); // For floating animation
 
   // Preload the sprite if it hasn't been loaded yet
   useEffect(() => {
@@ -62,6 +67,9 @@ export const FishSprite = ({ fish, river, onPositionChange }: FishSpriteProps) =
     if (!spriteRef.current || !app) return;
     
     const deltaTime = ticker.deltaTime;
+    
+    // Update floating animation time
+    floatingTimeRef.current += deltaTime * 0.03; // Slightly faster floating for fish
     
     // Update movement timer and potentially change direction
     let updatedFish = { ...fishState };
@@ -142,17 +150,51 @@ export const FishSprite = ({ fish, river, onPositionChange }: FishSpriteProps) =
       updatedFish.vy = -Math.abs(updatedFish.vy || 0) * 0.8; // Reverse direction with some damping
     }
     
+    // Calculate total velocity including river flow for rotation
+    const totalVx = (updatedFish.vx || 0) + riverFlowX * (1 - fish.resistance);
+    const totalVy = (updatedFish.vy || 0) + riverFlowY * (1 - fish.resistance);
+    
     // Rotate the fish to face its direction of movement
-    if (updatedFish.vx !== 0 || updatedFish.vy !== 0) {
-      const angle = Math.atan2(updatedFish.vy || 0, updatedFish.vx || 0);
-      // Add a small offset to make it visually match the fish sprite
-      const rotationOffset = Math.PI / 2;
-      spriteRef.current.rotation = angle + rotationOffset;
+    if (Math.abs(totalVx) > 0.1 || Math.abs(totalVy) > 0.1) {
+      const angle = Math.atan2(totalVy, totalVx);
+      spriteRef.current.rotation = angle + Math.PI; // Add 180 degrees (π radians)
     }
     
     // Update sprite position
     spriteRef.current.x = newX;
     spriteRef.current.y = newY;
+    
+    // Add floating effect - gentle bobbing motion
+    const floatingOffset = Math.sin(floatingTimeRef.current + fish.id * 0.7) * 1.5; // 1.5 pixel amplitude, different phase offset
+    spriteRef.current.y += floatingOffset;
+    
+    // Check collision with hyacinths
+    let touchingHyacinth = false;
+    const fishRadius = Math.max(spriteSize.width, spriteSize.height) / 2;
+    
+    for (const hyacinth of allHyacinths) {
+      const dx = newX - hyacinth.x;
+      const dy = newY - hyacinth.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Calculate hyacinth radius based on biomass (similar to collision logic in Hyacinth.tsx)
+      const baseScale = 0.06;
+      const baseHyacinthSize = 100; // Approximate base texture size for hyacinth
+      const hyacinthRadius = (baseHyacinthSize * baseScale * hyacinth.biomass / 2) * 0.9;
+      
+      if (distance < fishRadius + hyacinthRadius) {
+        touchingHyacinth = true;
+        break;
+      }
+    }
+    
+    // Update opacity based on collision state
+    if (touchingHyacinth !== fish.touchingHyacinth) {
+      onTouchingHyacinthChange(fish.id, touchingHyacinth);
+    }
+    
+    // Set sprite opacity
+    spriteRef.current.alpha = touchingHyacinth ? 0.5 : 1.0;
     
     // Update fish position in state
     onPositionChange(fish.id, newX, newY);

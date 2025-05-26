@@ -17,22 +17,45 @@ const NutrientsDisplay = ({ totalNutrients }: { totalNutrients: number }) => {
       top: "10px",
       left: "50%",
       transform: "translateX(-50%)",
-      backgroundColor: "rgba(0, 0, 0, 0.7)",
-      color: "white",
-      padding: "10px 20px",
-      borderRadius: "5px",
-      fontSize: "18px",
-      fontWeight: "bold",
+      backgroundColor: "rgba(255, 255, 255, 0.9)",
+      padding: "8px 16px",
+      borderRadius: "20px",
+      border: "2px solid #4CAF50",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
       zIndex: 1001,
-      pointerEvents: "none"
+      fontWeight: "bold",
+      color: "#2E7D32"
     }}>
-      Total Nutrients: {totalNutrients.toFixed(2)} kg
+      🌱 Nutrients: {totalNutrients.toFixed(1)} kg
+    </div>
+  );
+};
+
+const PollutionDisplay = ({ pollutionLevel }: { pollutionLevel: number }) => {
+  const pollutionColor = pollutionLevel > 50 ? "#D32F2F" : pollutionLevel > 20 ? "#FF9800" : "#4CAF50";
+  
+  return (
+    <div style={{
+      position: "absolute",
+      top: "50px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      backgroundColor: "rgba(255, 255, 255, 0.9)",
+      padding: "8px 16px",
+      borderRadius: "20px",
+      border: `2px solid ${pollutionColor}`,
+      boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+      zIndex: 1001,
+      fontWeight: "bold",
+      color: pollutionColor
+    }}>
+      🏭 Pollution: {pollutionLevel.toFixed(1)}%
     </div>
   );
 };
 
 const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: River) => void }) => {
-  const { handleFlowDirectionChange, handleFlowRateChange, handleNutrientsChange, handleTemperatureChange, handleSunlightChange } = createRiverControls(river, setRiver);
+  const { handleFlowDirectionChange, handleFlowRateChange, handleNutrientsChange, handleTemperatureChange, handleSunlightChange, handlePollutionChange } = createRiverControls(river, setRiver);
 
   return (
     <div style={{ 
@@ -40,11 +63,12 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
       padding: "10px",
       borderRadius: "5px",
       border: "1px solid #ccc",
-      boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+      color: "black"
     }}>
-      <h3 style={{ margin: "0 0 10px 0" }}>River Controls</h3>
+      <h3 style={{ margin: "0 0 10px 0", color: "black" }}>River Controls</h3>
       <div style={{ marginBottom: "10px" }}>
-        <label>Flow Direction (radians): </label>
+        <label style={{ color: "black" }}>Flow Direction (radians): </label>
         <input 
           type="range" 
           min="0" 
@@ -53,10 +77,10 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
           value={river.flowDirection} 
           onChange={(e) => handleFlowDirectionChange(parseFloat(e.target.value))}
         />
-        <span> {river.flowDirection.toFixed(2)}</span>
+        <span style={{ color: "black" }}> {river.flowDirection.toFixed(2)}</span>
       </div>
       <div style={{ marginBottom: "10px" }}>
-        <label>Flow Rate: </label>
+        <label style={{ color: "black" }}>Flow Rate: </label>
         <input 
           type="range" 
           min="0" 
@@ -65,10 +89,10 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
           value={river.flowRate} 
           onChange={(e) => handleFlowRateChange(parseFloat(e.target.value))}
         />
-        <span> {river.flowRate}</span>
+        <span style={{ color: "black" }}> {river.flowRate}</span>
       </div>
       <div style={{ marginBottom: "10px" }}>
-        <label>Total Nutrients (kg): </label>
+        <label style={{ color: "black" }}>Total Nutrients (kg): </label>
         <input 
           type="range" 
           min="0" 
@@ -77,22 +101,22 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
           value={river.totalNutrients} 
           onChange={(e) => handleNutrientsChange(parseFloat(e.target.value))}
         />
-        <span> {river.totalNutrients.toFixed(1)}</span>
+        <span style={{ color: "black" }}> {river.totalNutrients.toFixed(1)}</span>
       </div>
       <div style={{ marginBottom: "10px" }}>
-        <label>Temperature (°C): </label>
+        <label style={{ color: "black" }}>Temperature (°C): </label>
         <input 
           type="range" 
-          min="20" 
-          max="40" 
+          min="12" 
+          max="35" 
           step="1" 
           value={river.temperature} 
           onChange={(e) => handleTemperatureChange(parseFloat(e.target.value))}
         />
-        <span> {river.temperature}°C</span>
+        <span style={{ color: "black" }}> {river.temperature}°C</span>
       </div>
-      <div>
-        <label>Sunlight (0.0-1.0): </label>
+      <div style={{ marginBottom: "10px" }}>
+        <label style={{ color: "black" }}>Sunlight (0.0-1.0): </label>
         <input 
           type="range" 
           min="0" 
@@ -101,7 +125,19 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
           value={river.sunlight} 
           onChange={(e) => handleSunlightChange(parseFloat(e.target.value))}
         />
-        <span> {river.sunlight.toFixed(1)}</span>
+        <span style={{ color: "black" }}> {river.sunlight.toFixed(1)}</span>
+      </div>
+      <div>
+        <label style={{ color: "black" }}>Pollution Level (%): </label>
+        <input 
+          type="range" 
+          min="0" 
+          max="100" 
+          step="1" 
+          value={river.pollutionLevel} 
+          onChange={(e) => handlePollutionChange(parseFloat(e.target.value))}
+        />
+        <span style={{ color: "black" }}> {river.pollutionLevel.toFixed(1)}%</span>
       </div>
     </div>
   );
@@ -157,6 +193,15 @@ const AppContent = () => {
     setRiver(updatedRiver);
   };
   
+  // Handle pollution consumption by hyacinths
+  const handlePollutionConsumption = (consumedAmount: number) => {
+    const currentRiver = getRiver(); // Get the current singleton state
+    const updatedRiver = updateRiver({ 
+      pollutionLevel: Math.max(0, currentRiver.pollutionLevel - consumedAmount) 
+    });
+    setRiver(updatedRiver);
+  };
+  
   return (
     <div style={{ 
       display: "flex", 
@@ -168,6 +213,9 @@ const AppContent = () => {
     }}>
       {/* Nutrients display at the top center */}
       <NutrientsDisplay totalNutrients={river.totalNutrients} />
+      
+      {/* Pollution display at the top center */}
+      <PollutionDisplay pollutionLevel={river.pollutionLevel} />
       
       {/* Floating controls overlay */}
       <div style={{ 
@@ -203,7 +251,7 @@ const AppContent = () => {
           resizeTo={containerRef}
           autoDensity={true}
         >
-          <AgentScene river={river} onNutrientConsumption={handleNutrientConsumption} />
+          <AgentScene river={river} onNutrientConsumption={handleNutrientConsumption} onPollutionConsumption={handlePollutionConsumption} />
         </Application>
       </div>
     </div>

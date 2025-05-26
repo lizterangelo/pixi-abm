@@ -22,7 +22,11 @@ const calculateGrowthRate = (temperature: number, sunlight: number, nur: number)
   return tempFactor * sunlightFactor * nutrientFactor * 0.1; // 0.1 is the base growth rate
 };
 
-export const AgentScene = ({ river, onNutrientConsumption }: { river: River, onNutrientConsumption: (consumedAmount: number) => void }) => {
+export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumption }: { 
+  river: River, 
+  onNutrientConsumption: (consumedAmount: number) => void,
+  onPollutionConsumption: (consumedAmount: number) => void 
+}) => {
   const { app } = useApplication();
   const [hyacinths, setHyacinths] = useState<Hyacinth[]>([]);
   const [fish, setFish] = useState<Fish[]>([]);
@@ -51,6 +55,21 @@ export const AgentScene = ({ river, onNutrientConsumption }: { river: River, onN
           onNutrientConsumption(consumptionPerSecond);
         }
       }
+      
+      // Handle pollution consumption (hyacinths absorb pollution even if there's little left)
+      if (hyacinths.length > 0 && river.pollutionLevel > 0) {
+        // Calculate total POL from all hyacinths
+        const totalPOL = hyacinths.reduce((sum, hyacinth) => sum + hyacinth.pol, 0);
+        
+        // Use POL as percentage reduction per second
+        const pollutionReductionPerSecond = totalPOL;
+        
+        // Consume pollution every second
+        if (pollutionReductionPerSecond > 0) {
+          onPollutionConsumption(pollutionReductionPerSecond);
+        }
+      }
+      
       // Reset the timer
       lastNutrientUpdateRef.current = 0;
     }
@@ -109,6 +128,7 @@ export const AgentScene = ({ river, onNutrientConsumption }: { river: River, onN
     // Add the hyacinth
     if (foundValidPosition) {
       const nur = 0.01 + Math.random() * 0.04; // Generate NUR once
+      const pol = 0.1 + Math.random() * 0.4; // Generate POL (0.1-0.5% per second)
       const growthRate = calculateGrowthRate(river.temperature, river.sunlight, nur); // Calculate growth rate
       
       setHyacinths([...hyacinths, { 
@@ -119,6 +139,7 @@ export const AgentScene = ({ river, onNutrientConsumption }: { river: River, onN
         resistance: Math.random() * 0.5 + 0.5, // Random resistance between 0.5 and 1.0
         biomass: INIT_BIOMASS, // Start with initial biomass
         nur: nur, // Use the generated NUR
+        pol: pol, // Use the generated POL
         growthRate: growthRate, // Use the calculated growth rate
         parent: null, // Original hyacinths have no parent
         daughters: [], // Start with no daughters
@@ -194,6 +215,7 @@ export const AgentScene = ({ river, onNutrientConsumption }: { river: River, onN
     // Create daughter hyacinth with unique ID
     const daughterId = hyacinthIdCounter;
     const nur = 0.01 + Math.random() * 0.04; // Generate NUR for daughter
+    const pol = 0.1 + Math.random() * 0.4; // Generate POL (0.1-0.5% per second)
     const growthRate = calculateGrowthRate(river.temperature, river.sunlight, nur);
     
     const daughter: Hyacinth = {
@@ -204,6 +226,7 @@ export const AgentScene = ({ river, onNutrientConsumption }: { river: River, onN
       resistance: parent.resistance + (Math.random() - 0.5) * 0.1, // Slight variation from parent
       biomass: INIT_BIOMASS,
       nur: nur,
+      pol: pol,
       growthRate: growthRate,
       parent: parentId, // Set parent ID
       daughters: [],
@@ -239,6 +262,14 @@ export const AgentScene = ({ river, onNutrientConsumption }: { river: River, onN
     );
   };
 
+  // Handle fish touching hyacinth state changes
+  const handleFishTouchingHyacinthChange = (id: number, touching: boolean) => {
+    setFish(currentFish => 
+      currentFish.map(fish => 
+        fish.id === id ? { ...fish, touchingHyacinth: touching } : fish
+      )
+    );
+  };
 
   // Make these functions available to the parent
   useEffect(() => {
@@ -270,8 +301,10 @@ export const AgentScene = ({ river, onNutrientConsumption }: { river: River, onN
         <FishSprite 
           key={fish.id} 
           fish={fish} 
+          allHyacinths={hyacinths}
           river={river}
           onPositionChange={handleFishPositionChange}
+          onTouchingHyacinthChange={handleFishTouchingHyacinthChange}
         />
       ))}
     </>
