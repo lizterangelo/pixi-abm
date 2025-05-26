@@ -41,9 +41,9 @@ export const HYACINTH_SIZE = { width: 0, height: 0 };
 
 // Calculate growth rate based on environmental factors
 const calculateGrowthRate = (temperature: number, sunlight: number, nur: number): number => {
-  // Temperature factor (optimal around 30°C)
-  const tempFactor = temperature >= 25 && temperature <= 35 
-    ? 1.0 - Math.abs(temperature - 30) / 10 // Peak at 30°C, decreases towards 25°C and 35°C
+  // Temperature factor (optimal around 35°C)
+  const tempFactor = temperature >= 30 && temperature <= 40 
+    ? 1.0 - Math.abs(temperature - 35) / 10 // Peak at 35°C, decreases towards 30°C and 40°C
     : 0.1; // Very low growth outside optimal range
   
   // Sunlight factor (linear relationship)
@@ -53,7 +53,7 @@ const calculateGrowthRate = (temperature: number, sunlight: number, nur: number)
   const nutrientFactor = nur / 0.05; // Normalize to 0.05 max NUR
   
   // Combined growth rate with reduced base multiplier for slower growth
-  return tempFactor * sunlightFactor * nutrientFactor * 0.1; // 0.01 base rate for much slower growth
+  return tempFactor * sunlightFactor * nutrientFactor * 0.1; // 0.1 base rate
 };
 
 // Find available space around a hyacinth for reproduction

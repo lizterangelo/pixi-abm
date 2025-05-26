@@ -157,7 +157,7 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
         <input 
           type="range" 
           min="12" 
-          max="35" 
+          max="45" 
           step="1" 
           value={river.temperature} 
           onChange={(e) => handleTemperatureChange(parseFloat(e.target.value))}
