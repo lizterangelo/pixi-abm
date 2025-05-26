@@ -7,15 +7,21 @@ import { SimulationManager } from "../simulation/SimulationManager";
 import { isSimulationRunning } from "../simulation/SimulationControl";
 import { v4 as uuidv4 } from 'uuid';
 
-export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumption, onCurrentDOChange }: { 
+export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumption, onCurrentDOChange, onCountsChange }: { 
   river: River, 
   onNutrientConsumption: (consumedAmount: number) => void,
   onPollutionConsumption: (consumedAmount: number) => void,
-  onCurrentDOChange: (newDO: number) => void; 
+  onCurrentDOChange: (newDO: number) => void,
+  onCountsChange: (fishCount: number, hyacinthCount: number) => void
 }) => {
   const { app } = useApplication();
   const [hyacinths, setHyacinths] = useState<Hyacinth[]>([]);
   const [fish, setFish] = useState<Fish[]>([]);
+
+  // Effect to update counts whenever fish or hyacinth arrays change
+  useEffect(() => {
+    onCountsChange(fish.length, hyacinths.length);
+  }, [fish.length, hyacinths.length, onCountsChange]);
 
   // Effect to update currentDissolvedOxygen based on hyacinth count and pollution
   useEffect(() => {

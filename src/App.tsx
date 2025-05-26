@@ -100,6 +100,48 @@ const TickDisplay = () => {
   );
 };
 
+const FishCountDisplay = ({ fishCount }: { fishCount: number }) => {
+  return (
+    <div style={{
+      position: "absolute",
+      top: "10px",
+      right: "10px",
+      backgroundColor: "rgba(255, 255, 255, 0.9)",
+      padding: "8px 16px",
+      borderRadius: "20px",
+      border: "2px solid #FF5722",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+      zIndex: 1001,
+      fontWeight: "bold",
+      color: "#D84315",
+      fontSize: "14px"
+    }}>
+      🐟 Fish: {fishCount}
+    </div>
+  );
+};
+
+const HyacinthCountDisplay = ({ hyacinthCount }: { hyacinthCount: number }) => {
+  return (
+    <div style={{
+      position: "absolute",
+      top: "50px",
+      right: "10px",
+      backgroundColor: "rgba(255, 255, 255, 0.9)",
+      padding: "8px 16px",
+      borderRadius: "20px",
+      border: "2px solid #8BC34A",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+      zIndex: 1001,
+      fontWeight: "bold",
+      color: "#558B2F",
+      fontSize: "14px"
+    }}>
+      🌿 Hyacinths: {hyacinthCount}
+    </div>
+  );
+};
+
 const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: River) => void }) => {
   const { handleFlowDirectionChange, handleFlowRateChange, handleNutrientsChange, handleTemperatureChange, handleSunlightChange, handlePollutionChange } = createRiverControls(river, setRiver);
 
@@ -411,6 +453,8 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
 const AppContent = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [river, setRiver] = useState<River>(createRiver());
+  const [fishCount, setFishCount] = useState(0);
+  const [hyacinthCount, setHyacinthCount] = useState(0);
   
   // Handle nutrient consumption by hyacinths
   const handleNutrientConsumption = (consumedAmount: number) => {
@@ -433,6 +477,12 @@ const AppContent = () => {
   const handleCurrentDOChange = (newDO: number) => {
     const updatedRiver = updateRiver({ currentDissolvedOxygen: newDO });
     setRiver(updatedRiver);
+  };
+
+  // Handle count updates from AgentScene
+  const handleCountsChange = (newFishCount: number, newHyacinthCount: number) => {
+    setFishCount(newFishCount);
+    setHyacinthCount(newHyacinthCount);
   };
   
   return (
@@ -458,6 +508,12 @@ const AppContent = () => {
 
       {/* Dissolved Oxygen display below DayDisplay */}
       <DissolvedOxygenDisplay currentDO={river.currentDissolvedOxygen} />
+
+      {/* Fish count display */}
+      <FishCountDisplay fishCount={fishCount} />
+
+      {/* Hyacinth count display */}
+      <HyacinthCountDisplay hyacinthCount={hyacinthCount} />
       
       {/* Floating controls overlay */}
       <div style={{ 
@@ -496,6 +552,7 @@ const AppContent = () => {
             onNutrientConsumption={handleNutrientConsumption} 
             onPollutionConsumption={handlePollutionConsumption}
             onCurrentDOChange={handleCurrentDOChange}
+            onCountsChange={handleCountsChange}
           />
           </Application>
       </div>
