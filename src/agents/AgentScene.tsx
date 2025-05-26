@@ -1,28 +1,11 @@
 import { useApplication } from "@pixi/react";
 import { useEffect, useState, useRef } from "react";
-import { Hyacinth, HyacinthSprite, HYACINTH_SIZE, INIT_BIOMASS, MAX_BIOMASS } from "./Hyacinth";
+import { Hyacinth, HyacinthSprite, HYACINTH_SIZE, INIT_BIOMASS, MAX_BIOMASS, calculateGrowthRate } from "./Hyacinth";
 import { Fish, FishSprite } from "./Fish";
 import { River } from "../environment/River";
 import { SimulationManager } from "../simulation/SimulationManager";
 import { isSimulationRunning } from "../simulation/SimulationControl";
 import { v4 as uuidv4 } from 'uuid';
-
-// Calculate growth rate based on environmental factors
-const calculateGrowthRate = (temperature: number, sunlight: number, nur: number): number => {
-  // Temperature factor (optimal around 35°C)
-  const tempFactor = temperature >= 30 && temperature <= 40 
-    ? 1.0 - Math.abs(temperature - 35) / 10 // Peak at 35°C, decreases towards 30°C and 40°C
-    : 0.1; // Very low growth outside optimal range
-  
-  // Sunlight factor (linear relationship)
-  const sunlightFactor = sunlight;
-  
-  // Nutrient factor (higher NUR = better growth)
-  const nutrientFactor = nur / 0.05; // Normalize to 0.05 max NUR
-  
-  // Combined growth rate (0.0 to 1.0 scale) with base growth rate
-  return tempFactor * sunlightFactor * nutrientFactor * 0.1; // 0.1 is the base growth rate
-};
 
 export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumption }: { 
   river: River, 

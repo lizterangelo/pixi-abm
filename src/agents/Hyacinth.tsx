@@ -40,7 +40,7 @@ interface HyacinthSpriteProps {
 export const HYACINTH_SIZE = { width: 0, height: 0 };
 
 // Calculate growth rate based on environmental factors
-const calculateGrowthRate = (temperature: number, sunlight: number, nur: number): number => {
+export const calculateGrowthRate = (temperature: number, sunlight: number, nur: number): number => {
   // Temperature factor (optimal around 35°C)
   const tempFactor = temperature >= 30 && temperature <= 40 
     ? 1.0 - Math.abs(temperature - 35) / 10 // Peak at 35°C, decreases towards 30°C and 40°C
@@ -52,8 +52,8 @@ const calculateGrowthRate = (temperature: number, sunlight: number, nur: number)
   // Nutrient factor (higher NUR = better growth)
   const nutrientFactor = nur / 0.05; // Normalize to 0.05 max NUR
   
-  // Combined growth rate with reduced base multiplier for slower growth
-  return tempFactor * sunlightFactor * nutrientFactor * 0.1; // 0.1 base rate
+  // Combined growth rate with a much higher base multiplier
+  return tempFactor * sunlightFactor * nutrientFactor * 0.2; // Changed from 0.1 to 10
 };
 
 // Find available space around a hyacinth for reproduction
