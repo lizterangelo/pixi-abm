@@ -11,6 +11,7 @@ export const MAX_BIOMASS = 2.5;
 
 export interface Hyacinth {
   id: string;
+  reproduceRate: number; // Reproduction rate (0-1 = 0%-100% chance per second)
   x: number;
   y: number;
   rotationSpeed: number;
@@ -112,6 +113,7 @@ export const HyacinthSprite = ({ hyacinth, allHyacinths, river, onPositionChange
   const { app } = useApplication();
   const lastGrowthUpdateRef = useRef<number>(0);
   const floatingTimeRef = useRef<number>(0); // For floating animation
+  const lastReproductionCheckRef = useRef<number>(0); // For reproduction timing
   
   // Add velocity state for smooth movement
   const velocityRef = useRef({ vx: 0, vy: 0 });
@@ -137,8 +139,8 @@ export const HyacinthSprite = ({ hyacinth, allHyacinths, river, onPositionChange
       // Base size is 0.1 of original texture, then scaled by biomass
       const baseScale = 0.06;
       const size = texture.width * baseScale * hyacinth.biomass; // width and height are always the same
-      
-      setSpriteSize({
+        
+        setSpriteSize({
         width: size,
         height: size,
       });
@@ -179,23 +181,33 @@ export const HyacinthSprite = ({ hyacinth, allHyacinths, river, onPositionChange
         // Update hyacinth biomass
         onBiomassChange(hyacinth.id, newBiomass);
         onBiomassGainedChange(hyacinth.id, newBiomassGained);
-        
-        // Check for reproduction conditions
-        const reproductionThreshold = 0.6 + Math.random() * 0.4; // Random between 0.6-1.0
-        if (newBiomassGained >= reproductionThreshold && 
-            hyacinth.currentDaughters < hyacinth.futureDaughters &&
-            hyacinth.biomass < MAX_BIOMASS) { // Cannot reproduce if at max biomass
-          
-          // Check if there's space around the hyacinth for reproduction
-          const reproductionPosition = findReproductionSpace(hyacinth, allHyacinths, spriteSize);
-          if (reproductionPosition) {
-            console.log(`Hyacinth ${hyacinth.id} reproducing at (${reproductionPosition.x.toFixed(1)}, ${reproductionPosition.y.toFixed(1)})`);
-            onReproduction(hyacinth.id, reproductionPosition.x, reproductionPosition.y);
-          }
-        }
       }
       
       lastGrowthUpdateRef.current = 0;
+    }
+
+    // Handle reproduction check every second
+    lastReproductionCheckRef.current += deltaTime / 60; // Convert to seconds
+    
+    if (lastReproductionCheckRef.current >= 1.0) {
+      // Check for reproduction based on reproduceRate (0-1 = 0%-100% chance per second)
+      const reproductionChance = hyacinth.reproduceRate; // Already in 0-1 scale
+      const randomValue = Math.floor(Math.random() * 100) + 1; // 1 to 100
+      
+      if (randomValue <= reproductionChance * 100 && // Convert 0-1 to 1-100 for comparison
+          hyacinth.currentDaughters < hyacinth.futureDaughters && // Cannot exceed future daughters limit
+          hyacinth.biomass < MAX_BIOMASS && // Cannot reproduce if at max biomass
+          river.totalNutrients > 0) { // Cannot reproduce if no nutrients left
+        
+        // Check if there's space around the hyacinth for reproduction
+        const reproductionPosition = findReproductionSpace(hyacinth, allHyacinths, spriteSize);
+        if (reproductionPosition) {
+          console.log(`Hyacinth ${hyacinth.id} reproducing! (Rate: ${(hyacinth.reproduceRate * 100).toFixed(0)}%, Roll: ${randomValue}) at (${reproductionPosition.x.toFixed(1)}, ${reproductionPosition.y.toFixed(1)}) - Daughters: ${hyacinth.currentDaughters}/${hyacinth.futureDaughters}`);
+          onReproduction(hyacinth.id, reproductionPosition.x, reproductionPosition.y);
+        }
+      }
+      
+      lastReproductionCheckRef.current = 0;
     }
     
     // Calculate river flow effect

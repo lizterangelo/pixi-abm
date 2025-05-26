@@ -28,9 +28,10 @@ interface FishSpriteProps {
   onPositionChange: (id: string, x: number, y: number) => void;
   onTouchingHyacinthChange: (id: string, touching: boolean) => void;
   onReproduction: (parentId: string, x: number, y: number) => void;
+  onDeath: (id: string) => void;
 }
 
-export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouchingHyacinthChange, onReproduction }: FishSpriteProps) => {
+export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouchingHyacinthChange, onReproduction, onDeath }: FishSpriteProps) => {
   const spriteRef = useRef<Sprite>(null);
   const [texture, setTexture] = useState(Texture.EMPTY);
   const [spriteSize, setSpriteSize] = useState({ width: 0, height: 0 });
@@ -38,6 +39,7 @@ export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouc
   const { app } = useApplication();
   const floatingTimeRef = useRef<number>(0); // For floating animation
   const lastReproductionCheckRef = useRef<number>(0); // For reproduction timing
+  const lastDeathCheckRef = useRef<number>(0); // For death rate timing
 
   // Sync local state with props when fish position changes from parent
   useEffect(() => {
@@ -87,17 +89,64 @@ export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouc
     // Update floating animation time
     floatingTimeRef.current += deltaTime * 0.03; // Slightly faster floating for fish
     
+    // Handle death check every second based on dissolved oxygen
+    lastDeathCheckRef.current += deltaTime / 60; // Convert to seconds
+    
+    if (lastDeathCheckRef.current >= 1.0) {
+      // Calculate death rate based on dissolved oxygen levels using a more realistic curve
+      // Fish can survive well at higher DO levels, but mortality increases exponentially as DO drops
+      const dissolvedOxygen = river.currentDissolvedOxygen;
+      let deathRate = 0; // 0-1 scale (0% to 100%)
+      
+      if (dissolvedOxygen <= 0) {
+        deathRate = 1.0; // 100% death rate - no oxygen = immediate death
+      } else if (dissolvedOxygen >= 6.0) {
+        deathRate = 0.0; // 0% death rate - optimal oxygen levels
+      } else if (dissolvedOxygen >= 4.0) {
+        // 4.0-6.0 mg/L: Very low death rate (0-2%)
+        // Fish can survive well but with slight stress
+        deathRate = 0.02 * (1 - (dissolvedOxygen - 4.0) / 2.0);
+      } else if (dissolvedOxygen >= 2.0) {
+        // 2.0-4.0 mg/L: Moderate death rate (2-15%)
+        // Fish start experiencing significant stress
+        const normalizedDO = (dissolvedOxygen - 2.0) / 2.0; // 0-1 scale
+        deathRate = 0.15 * (1 - normalizedDO * normalizedDO) + 0.02; // Quadratic increase
+      } else if (dissolvedOxygen >= 1.0) {
+        // 1.0-2.0 mg/L: High death rate (15-50%)
+        // Critical oxygen levels - exponential mortality increase
+        const normalizedDO = (dissolvedOxygen - 1.0) / 1.0; // 0-1 scale
+        deathRate = 0.5 * (1 - normalizedDO * normalizedDO * normalizedDO) + 0.15; // Cubic curve
+      } else {
+        // 0.0-1.0 mg/L: Very high death rate (50-100%)
+        // Lethal oxygen levels - rapid exponential mortality
+        const normalizedDO = dissolvedOxygen / 1.0; // 0-1 scale
+        deathRate = 1.0 - 0.5 * normalizedDO * normalizedDO; // Quadratic approach to 100%
+      }
+      
+      // Check for death based on deathRate
+      const randomValue = Math.floor(Math.random() * 100) + 1; // 1 to 100
+      
+      if (randomValue <= deathRate * 100) { // Convert 0-1 to 1-100 for comparison
+        // Fish dies! Remove from simulation
+        console.log(`Fish ${fish.id} died! (DO: ${dissolvedOxygen.toFixed(2)} mg/L, Death Rate: ${(deathRate * 100).toFixed(1)}%, Roll: ${randomValue})`);
+        onDeath(fish.id);
+        return; // Exit early since fish is dead
+      }
+      
+      lastDeathCheckRef.current = 0;
+    }
+    
     // Handle reproduction check every second
     lastReproductionCheckRef.current += deltaTime / 60; // Convert to seconds
     
     if (lastReproductionCheckRef.current >= 1.0) {
       // Check for reproduction based on reproduceRate (0-1 = 0%-100% chance per second)
-      const reproductionChance = fish.reproduceRate; // 0 to 1
-      const randomValue = Math.random(); // 0 to 1
+      const reproductionChance = fish.reproduceRate; // Already in 0-1 scale
+      const randomValue = Math.floor(Math.random() * 100) + 1; // 1 to 100
       
-      if (randomValue < reproductionChance) {
+      if (randomValue <= reproductionChance * 100) { // Convert 0-1 to 1-100 for comparison
         // Reproduce! Spawn new fish at parent's location
-        console.log(`Fish ${fish.id} reproducing! (Rate: ${fish.reproduceRate.toFixed(2)}, Roll: ${randomValue.toFixed(3)})`);
+        console.log(`Fish ${fish.id} reproducing! (Rate: ${(fish.reproduceRate * 100).toFixed(0)}%, Roll: ${randomValue})`);
         onReproduction(fish.id, fishState.x, fishState.y);
       }
       

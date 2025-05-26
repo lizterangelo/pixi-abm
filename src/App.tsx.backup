@@ -199,8 +199,8 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
 const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
   const [hyacinthCount, setHyacinthCount] = useState(5);
   const [fishCount, setFishCount] = useState(3);
-  const [hyacinthReproduceRate, setHyacinthReproduceRate] = useState(5);
-  const [fishReproduceRate, setFishReproduceRate] = useState(5);
+  const [hyacinthReproduceRate, setHyacinthReproduceRate] = useState(0.05);
+  const [fishReproduceRate, setFishReproduceRate] = useState(0.05);
   const [simulationState, setSimulationState] = useState(getSimulationState());
   const [speedMultiplier, setSpeedMultiplierState] = useState(getSpeedMultiplier());
 
@@ -218,27 +218,24 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
     if (window.resetAgents) window.resetAgents();
 
     // Setup hyacinths and fish using batch functions
-    // Convert percentage (1-100) to decimal (0-1) for internal use
     // @ts-ignore
-    if (window.setupHyacinths) window.setupHyacinths(hyacinthCount, hyacinthReproduceRate / 100);
+    if (window.setupHyacinths) window.setupHyacinths(hyacinthCount, hyacinthReproduceRate);
     // @ts-ignore
-    if (window.setupFish) window.setupFish(fishCount, fishReproduceRate / 100);
+    if (window.setupFish) window.setupFish(fishCount, fishReproduceRate);
   };
 
   const handleHyacinthReproduceRateChange = (newRate: number) => {
     setHyacinthReproduceRate(newRate);
     // Update all existing hyacinth reproduce rates
-    // Convert percentage (1-100) to decimal (0-1) for internal use
     // @ts-ignore
-    if (window.updateAllHyacinthReproduceRate) window.updateAllHyacinthReproduceRate(newRate / 100);
+    if (window.updateAllHyacinthReproduceRate) window.updateAllHyacinthReproduceRate(newRate);
   };
 
   const handleFishReproduceRateChange = (newRate: number) => {
     setFishReproduceRate(newRate);
     // Update all existing fish reproduce rates
-    // Convert percentage (1-100) to decimal (0-1) for internal use
     // @ts-ignore
-    if (window.updateAllFishReproduceRate) window.updateAllFishReproduceRate(newRate / 100);
+    if (window.updateAllFishReproduceRate) window.updateAllFishReproduceRate(newRate);
   };
 
   const handleTogglePlayPause = () => {
@@ -334,14 +331,14 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
         <label style={{ color: "black", fontSize: "11px" }}>Hyacinth Reproduce Rate: </label>
         <input 
           type="range" 
-          min="1" 
-          max="100" 
-          step="1" 
+          min="0" 
+          max="1" 
+          step="0.01" 
           value={hyacinthReproduceRate} 
-          onChange={(e) => handleHyacinthReproduceRateChange(parseInt(e.target.value))}
+          onChange={(e) => handleHyacinthReproduceRateChange(parseFloat(e.target.value))}
           style={{ width: "80px" }}
         />
-        <span style={{ color: "black", fontSize: "10px" }}> {hyacinthReproduceRate}%</span>
+        <span style={{ color: "black", fontSize: "10px" }}> {hyacinthReproduceRate.toFixed(2)}</span>
       </div>
       <div style={{ marginBottom: "6px" }}>
         <label style={{ color: "black", fontSize: "11px" }}>Fish: </label>
@@ -360,14 +357,14 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
         <label style={{ color: "black", fontSize: "11px" }}>Fish Reproduce Rate: </label>
         <input 
           type="range" 
-          min="1" 
-          max="100" 
-          step="1" 
+          min="0" 
+          max="1" 
+          step="0.01" 
           value={fishReproduceRate} 
-          onChange={(e) => handleFishReproduceRateChange(parseInt(e.target.value))}
+          onChange={(e) => handleFishReproduceRateChange(parseFloat(e.target.value))}
           style={{ width: "80px" }}
         />
-        <span style={{ color: "black", fontSize: "10px" }}> {fishReproduceRate}%</span>
+        <span style={{ color: "black", fontSize: "10px" }}> {fishReproduceRate.toFixed(2)}</span>
       </div>
       <button 
         onClick={handleSetup} 
