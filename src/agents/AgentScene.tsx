@@ -46,12 +46,13 @@ export const AgentScene = ({
     // Or, more simply, ensure the subtracted value is capped.
     // The Math.max(0, ...) below will handle the final floor.
 
-    const newCurrentDO = Math.max(
-      0,
-      river.initialDissolvedOxygen -
-        totalHyacinthOxygenImpact -
-        pollutionDOImpact,
-    );
+    const calculatedDO = river.initialDissolvedOxygen -
+      totalHyacinthOxygenImpact -
+      pollutionDOImpact;
+
+    // Constrain dissolved oxygen between 0 and 7 mg/L
+    const newCurrentDO = Math.max(0, Math.min(7, calculatedDO));
+    
     onCurrentDOChange(newCurrentDO);
   }, [
     hyacinths,

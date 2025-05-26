@@ -39,7 +39,17 @@ export const updateRiver = (updates: Partial<River>): River => {
   if (!riverInstance) {
     riverInstance = createRiver();
   }
-  riverInstance = { ...riverInstance, ...updates };
+  
+  // Apply constraints to dissolved oxygen values
+  const constrainedUpdates = { ...updates };
+  if (constrainedUpdates.initialDissolvedOxygen !== undefined) {
+    constrainedUpdates.initialDissolvedOxygen = Math.min(7, Math.max(0, constrainedUpdates.initialDissolvedOxygen));
+  }
+  if (constrainedUpdates.currentDissolvedOxygen !== undefined) {
+    constrainedUpdates.currentDissolvedOxygen = Math.min(7, Math.max(0, constrainedUpdates.currentDissolvedOxygen));
+  }
+  
+  riverInstance = { ...riverInstance, ...constrainedUpdates };
   return riverInstance;
 };
 
