@@ -77,10 +77,20 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
   };
 
   // Check if a position overlaps with existing hyacinths
-  const checkOverlap = (x: number, y: number, minDistance: number): boolean => {
+  const checkHyacinthOverlap = (x: number, y: number, minDistance: number): boolean => {
     return hyacinths.some(hyacinth => {
       const dx = hyacinth.x - x;
       const dy = hyacinth.y - y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      return distance < minDistance;
+    });
+  };
+
+  // Check if a position overlaps with existing fish
+  const checkFishOverlap = (x: number, y: number, minDistance: number): boolean => {
+    return fish.some(fishAgent => {
+      const dx = fishAgent.x - x;
+      const dy = fishAgent.y - y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       return distance < minDistance;
     });
@@ -113,7 +123,7 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
       x = Math.max(edgePadding, Math.min(app.screen.width - edgePadding, x));
       y = Math.max(edgePadding, Math.min(app.screen.height - edgePadding, y));
       
-      if (!checkOverlap(x, y, minDistance)) {
+      if (!checkHyacinthOverlap(x, y, minDistance)) {
         foundValidPosition = true;
       }
       
@@ -156,23 +166,194 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
   const addFish = () => {
     if (!app) return;
     
-    const x = Math.random() * app.screen.width;
-    const y = Math.random() * app.screen.height;
+    const fishSize = 50; // Approximate fish size for spacing
+    const minDistance = fishSize * 0.8; // Minimum distance between fish
     
-    setFish([...fish, { 
-      id: fishIdCounter, 
-      x, 
-      y,
-      rotationSpeed: 0.1,
-      resistance: Math.random() * 0.5 + 0.5 // Random resistance between 0.5 and 1.0
-    }]);
-    setFishIdCounter(fishIdCounter + 1);
+    // Try to find a position that doesn't overlap with other fish (max 50 attempts)
+    let x, y;
+    let attempts = 0;
+    let foundValidPosition = false;
+    
+    while (!foundValidPosition && attempts < 50) {
+      x = Math.random() * app.screen.width;
+      y = Math.random() * app.screen.height;
+      
+      // Keep fish away from edges
+      const edgePadding = fishSize / 2;
+      x = Math.max(edgePadding, Math.min(app.screen.width - edgePadding, x));
+      y = Math.max(edgePadding, Math.min(app.screen.height - edgePadding, y));
+      
+      if (!checkFishOverlap(x, y, minDistance)) {
+        foundValidPosition = true;
+      }
+      
+      attempts++;
+    }
+    
+    // If we couldn't find a good position after max attempts, use the last attempted position
+    if (!foundValidPosition && attempts >= 50) {
+      foundValidPosition = true;
+    }
+    
+    // Add the fish
+    if (foundValidPosition) {
+      setFish([...fish, { 
+        id: fishIdCounter, 
+        x: x!, 
+        y: y!,
+        rotationSpeed: 0.1,
+        resistance: Math.random() * 0.5 + 0.5 // Random resistance between 0.5 and 1.0
+      }]);
+      setFishIdCounter(fishIdCounter + 1);
+    }
   };
 
   // Function to reset all agents
   const resetAgents = () => {
     setHyacinths([]);
     setFish([]);
+    setHyacinthIdCounter(0);
+    setFishIdCounter(0);
+  };
+
+  // Function to setup multiple hyacinths
+  const setupHyacinths = (count: number) => {
+    if (!app || count <= 0) return;
+    
+    const newHyacinths: Hyacinth[] = [];
+    const size = Math.max(HYACINTH_SIZE.width, HYACINTH_SIZE.height);
+    const overlapFactor = 0.7;
+    const minDistance = size > 0 ? size * overlapFactor : 20;
+    
+    for (let i = 0; i < count; i++) {
+      let x: number = 0, y: number = 0;
+      let attempts = 0;
+      let foundValidPosition = false;
+      
+      while (!foundValidPosition && attempts < 100) {
+        x = Math.random() * app.screen.width;
+        y = Math.random() * app.screen.height;
+        
+        const edgePadding = size / 2 || 15;
+        x = Math.max(edgePadding, Math.min(app.screen.width - edgePadding, x));
+        y = Math.max(edgePadding, Math.min(app.screen.height - edgePadding, y));
+        
+        // Check against existing hyacinths and new hyacinths being placed
+        const overlapsExisting = hyacinths.some(hyacinth => {
+          const dx = hyacinth.x - x;
+          const dy = hyacinth.y - y;
+          return Math.sqrt(dx * dx + dy * dy) < minDistance;
+        });
+        
+        const overlapsNew = newHyacinths.some(hyacinth => {
+          const dx = hyacinth.x - x;
+          const dy = hyacinth.y - y;
+          return Math.sqrt(dx * dx + dy * dy) < minDistance;
+        });
+        
+        if (!overlapsExisting && !overlapsNew) {
+          foundValidPosition = true;
+        }
+        
+        attempts++;
+      }
+      
+      if (!foundValidPosition && attempts >= 100) {
+        // Use a fallback position if we can't find a good spot
+        x = Math.random() * app.screen.width;
+        y = Math.random() * app.screen.height;
+        const edgePadding = size / 2 || 15;
+        x = Math.max(edgePadding, Math.min(app.screen.width - edgePadding, x));
+        y = Math.max(edgePadding, Math.min(app.screen.height - edgePadding, y));
+      }
+      
+      const nur = 0.01 + Math.random() * 0.04;
+      const pol = 0.1 + Math.random() * 0.4;
+      const growthRate = calculateGrowthRate(river.temperature, river.sunlight, nur);
+      
+      newHyacinths.push({
+        id: hyacinthIdCounter + i,
+        x: x,
+        y: y,
+        rotationSpeed: 0.1,
+        resistance: Math.random() * 0.5 + 0.5,
+        biomass: INIT_BIOMASS,
+        nur: nur,
+        pol: pol,
+        growthRate: growthRate,
+        parent: null,
+        daughters: [],
+        currentDaughters: 0,
+        futureDaughters: Math.floor(Math.random() * 4) + 1,
+        biomassGained: 0
+      });
+    }
+    
+    setHyacinths([...hyacinths, ...newHyacinths]);
+    setHyacinthIdCounter(hyacinthIdCounter + count);
+  };
+
+  // Function to setup multiple fish
+  const setupFish = (count: number) => {
+    if (!app || count <= 0) return;
+    
+    const newFish: Fish[] = [];
+    const fishSize = 50;
+    const minDistance = fishSize * 0.8;
+    
+    for (let i = 0; i < count; i++) {
+      let x: number = 0, y: number = 0;
+      let attempts = 0;
+      let foundValidPosition = false;
+      
+      while (!foundValidPosition && attempts < 100) {
+        x = Math.random() * app.screen.width;
+        y = Math.random() * app.screen.height;
+        
+        const edgePadding = fishSize / 2;
+        x = Math.max(edgePadding, Math.min(app.screen.width - edgePadding, x));
+        y = Math.max(edgePadding, Math.min(app.screen.height - edgePadding, y));
+        
+        // Check against existing fish and new fish being placed
+        const overlapsExisting = fish.some(fishAgent => {
+          const dx = fishAgent.x - x;
+          const dy = fishAgent.y - y;
+          return Math.sqrt(dx * dx + dy * dy) < minDistance;
+        });
+        
+        const overlapsNew = newFish.some(fishAgent => {
+          const dx = fishAgent.x - x;
+          const dy = fishAgent.y - y;
+          return Math.sqrt(dx * dx + dy * dy) < minDistance;
+        });
+        
+        if (!overlapsExisting && !overlapsNew) {
+          foundValidPosition = true;
+        }
+        
+        attempts++;
+      }
+      
+      if (!foundValidPosition && attempts >= 100) {
+        // Use a fallback position if we can't find a good spot
+        x = Math.random() * app.screen.width;
+        y = Math.random() * app.screen.height;
+        const edgePadding = fishSize / 2;
+        x = Math.max(edgePadding, Math.min(app.screen.width - edgePadding, x));
+        y = Math.max(edgePadding, Math.min(app.screen.height - edgePadding, y));
+      }
+      
+      newFish.push({
+        id: fishIdCounter + i,
+        x: x,
+        y: y,
+        rotationSpeed: 0.1,
+        resistance: Math.random() * 0.5 + 0.5
+      });
+    }
+    
+    setFish([...fish, ...newFish]);
+    setFishIdCounter(fishIdCounter + count);
   };
 
   // Handle hyacinth position updates
@@ -281,6 +462,10 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
       window.addFish = addFish;
       // @ts-ignore
       window.resetAgents = resetAgents;
+      // @ts-ignore
+      window.setupHyacinths = setupHyacinths;
+      // @ts-ignore
+      window.setupFish = setupFish;
     }
   }, [app, hyacinths, fish, hyacinthIdCounter, fishIdCounter]);
 

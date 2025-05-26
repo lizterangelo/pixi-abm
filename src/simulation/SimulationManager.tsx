@@ -1,6 +1,6 @@
 import { useTick } from "@pixi/react";
 import { useRef } from "react";
-import { updateGlobalTime, isSimulationRunning } from "./SimulationControl";
+import { updateGlobalTime, isSimulationRunning, getSpeedMultiplier } from "./SimulationControl";
 
 interface SimulationManagerProps {
   onNutrientUpdate: () => void;
@@ -14,21 +14,23 @@ export const SimulationManager = ({ onNutrientUpdate, onHyacinthUpdate, onFishUp
   useTick((ticker) => {
     if (!isSimulationRunning()) return;
 
-    const deltaTime = ticker.deltaTime;
+    const baseDeltaTime = ticker.deltaTime;
+    const speedMultiplier = getSpeedMultiplier();
+    const deltaTime = baseDeltaTime * speedMultiplier;
     
     // Update global simulation time
-    updateGlobalTime(deltaTime);
+    updateGlobalTime(baseDeltaTime); // Pass base deltaTime since updateGlobalTime applies speed internally
     
-    // Handle nutrient consumption every second
+    // Handle nutrient consumption every second (adjusted for speed)
     lastNutrientUpdateRef.current += deltaTime / 60; // Convert to seconds
     if (lastNutrientUpdateRef.current >= 1.0) {
       onNutrientUpdate();
       lastNutrientUpdateRef.current = 0;
     }
     
-    // Update hyacinths and fish
-    onHyacinthUpdate(deltaTime);
-    onFishUpdate(deltaTime);
+    // Update hyacinths and fish with base deltaTime (they handle speed internally now)
+    onHyacinthUpdate(baseDeltaTime);
+    onFishUpdate(baseDeltaTime);
   });
 
   return null; // This component doesn't render anything

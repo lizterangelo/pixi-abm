@@ -4,7 +4,7 @@ import { useTick } from "@pixi/react";
 import { useApplication } from "@pixi/react";
 import { River } from "../environment/River";
 import { Hyacinth } from "./Hyacinth";
-import { isSimulationRunning } from "../simulation/SimulationControl";
+import { isSimulationRunning, getSpeedMultiplier } from "../simulation/SimulationControl";
 
 export interface Fish {
   id: number;
@@ -36,6 +36,18 @@ export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouc
   const { app } = useApplication();
   const floatingTimeRef = useRef<number>(0); // For floating animation
 
+  // Sync local state with props when fish position changes from parent
+  useEffect(() => {
+    setFishState(prevState => ({
+      ...prevState,
+      x: fish.x,
+      y: fish.y,
+      id: fish.id,
+      resistance: fish.resistance,
+      touchingHyacinth: fish.touchingHyacinth
+    }));
+  }, [fish.x, fish.y, fish.id, fish.resistance, fish.touchingHyacinth]);
+
   // Preload the sprite if it hasn't been loaded yet
   useEffect(() => {
     if (texture === Texture.EMPTY) {
@@ -52,7 +64,7 @@ export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouc
 
   // Get a new random target within the screen bounds
   const getNewTarget = () => {
-    if (!app) return { x: fish.x, y: fish.y };
+    if (!app) return { x: fishState.x, y: fishState.y };
     
     // Add some padding from the edges
     const padding = Math.max(spriteSize.width, spriteSize.height) / 2;
@@ -67,7 +79,9 @@ export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouc
   useTick((ticker) => {
     if (!spriteRef.current || !app || !isSimulationRunning()) return;
     
-    const deltaTime = ticker.deltaTime;
+    const baseDeltaTime = ticker.deltaTime;
+    const speedMultiplier = getSpeedMultiplier();
+    const deltaTime = baseDeltaTime * speedMultiplier;
     
     // Update floating animation time
     floatingTimeRef.current += deltaTime * 0.03; // Slightly faster floating for fish
@@ -85,9 +99,11 @@ export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouc
       updatedFish.movementTimer = Math.random() * 300 + 200; // Random time between 200-500 frames
     }
     
-    // Calculate direction vector to target
-    const dx = (updatedFish.targetX || fish.x) - fish.x;
-    const dy = (updatedFish.targetY || fish.y) - fish.y;
+    // Calculate direction vector to target using current fish state position
+    const currentX = fishState.x;
+    const currentY = fishState.y;
+    const dx = (updatedFish.targetX || currentX) - currentX;
+    const dy = (updatedFish.targetY || currentY) - currentY;
     const distance = Math.sqrt(dx * dx + dy * dy);
     
     // If we're close to the target, slow down
@@ -110,7 +126,7 @@ export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouc
       const normDx = dx / distance;
       const normDy = dy / distance;
       
-      // Update velocity gradually (acceleration)
+      // Update velocity gradually (acceleration) - speed affects this directly
       updatedFish.vx = (updatedFish.vx || 0) + normDx * speed * deltaTime * 0.1;
       updatedFish.vy = (updatedFish.vy || 0) + normDy * speed * deltaTime * 0.1;
       
@@ -122,13 +138,13 @@ export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouc
       }
     }
     
-    // Calculate river flow effect
+    // Calculate river flow effect - speed affects this directly
     const riverFlowX = Math.cos(river.flowDirection) * river.flowRate * deltaTime * 0.05;
     const riverFlowY = Math.sin(river.flowDirection) * river.flowRate * deltaTime * 0.05;
     
-    // Calculate new position with fish movement and river flow
-    let newX = fish.x + (updatedFish.vx || 0) + riverFlowX * (1 - fish.resistance);
-    let newY = fish.y + (updatedFish.vy || 0) + riverFlowY * (1 - fish.resistance);
+    // Calculate new position with fish movement and river flow - speed affects movement
+    let newX = currentX + (updatedFish.vx || 0) * deltaTime + riverFlowX * (1 - fish.resistance);
+    let newY = currentY + (updatedFish.vy || 0) * deltaTime + riverFlowY * (1 - fish.resistance);
     
     // Apply bounds checking to keep fish within the screen
     const halfWidth = spriteSize.width / 2;
@@ -150,6 +166,10 @@ export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouc
       newY = app.screen.height - halfHeight;
       updatedFish.vy = -Math.abs(updatedFish.vy || 0) * 0.8; // Reverse direction with some damping
     }
+    
+    // Update the fish state with new position
+    updatedFish.x = newX;
+    updatedFish.y = newY;
     
     // Calculate total velocity including river flow for rotation
     const totalVx = (updatedFish.vx || 0) + riverFlowX * (1 - fish.resistance);
@@ -209,8 +229,8 @@ export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouc
       ref={spriteRef}
       texture={texture}
       anchor={0.5}
-      x={fish.x}
-      y={fish.y}
+      x={fishState.x}
+      y={fishState.y}
       width={spriteSize.width}
       height={spriteSize.height}
     />

@@ -3,7 +3,7 @@ import { Container, Sprite } from "pixi.js";
 import { AgentScene } from "./agents/AgentScene";
 import { River, createRiver, createRiverControls, updateRiver, resetRiver, getRiver } from "./environment/River";
 import { useRef, useEffect, useState } from "react";
-import { playSimulation, pauseSimulation, resetSimulation, getSimulationState, addStateChangeListener } from "./simulation/SimulationControl";
+import { playSimulation, pauseSimulation, resetSimulation, getSimulationState, addStateChangeListener, setSpeedMultiplier, getSpeedMultiplier, getTickCount } from "./simulation/SimulationControl";
 
 // extend tells @pixi/react what Pixi.js components are available
 extend({
@@ -55,21 +55,65 @@ const PollutionDisplay = ({ pollutionLevel }: { pollutionLevel: number }) => {
   );
 };
 
+const TickDisplay = () => {
+  const [tickCount, setTickCount] = useState(getTickCount());
+  const [speedMultiplier, setSpeedMultiplierState] = useState(getSpeedMultiplier());
+
+  useEffect(() => {
+    const unsubscribe = addStateChangeListener(() => {
+      setTickCount(getTickCount());
+      setSpeedMultiplierState(getSpeedMultiplier());
+    });
+    return unsubscribe;
+  }, []);
+
+  const getSpeedLabel = (value: number) => {
+    if (value === 0.1) return "Very Slow";
+    if (value === 0.5) return "Slow";
+    if (value === 1) return "Normal";
+    if (value === 5) return "Fast";
+    if (value === 10) return "Very Fast";
+    if (value === 20) return "Super Fast";
+    return `${value}x`;
+  };
+
+  return (
+    <div style={{
+      position: "absolute",
+      top: "90px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      backgroundColor: "rgba(255, 255, 255, 0.9)",
+      padding: "8px 16px",
+      borderRadius: "20px",
+      border: "2px solid #2196F3",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+      zIndex: 1001,
+      fontWeight: "bold",
+      color: "#1976D2",
+      fontSize: "12px"
+    }}>
+      ⏱️ Ticks: {tickCount} | Speed: {getSpeedLabel(speedMultiplier)} ({speedMultiplier}x)
+    </div>
+  );
+};
+
 const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: River) => void }) => {
   const { handleFlowDirectionChange, handleFlowRateChange, handleNutrientsChange, handleTemperatureChange, handleSunlightChange, handlePollutionChange } = createRiverControls(river, setRiver);
 
   return (
     <div style={{ 
       backgroundColor: "rgba(255, 255, 255, 0.8)",
-      padding: "10px",
+      padding: "8px",
       borderRadius: "5px",
       border: "1px solid #ccc",
       boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-      color: "black"
+      color: "black",
+      fontSize: "12px"
     }}>
-      <h3 style={{ margin: "0 0 10px 0", color: "black" }}>River Controls</h3>
-      <div style={{ marginBottom: "10px" }}>
-        <label style={{ color: "black" }}>Flow Direction (radians): </label>
+      <h4 style={{ margin: "0 0 8px 0", color: "black", fontSize: "14px" }}>River Controls</h4>
+      <div style={{ marginBottom: "6px" }}>
+        <label style={{ color: "black", fontSize: "11px" }}>Flow Direction: </label>
         <input 
           type="range" 
           min="0" 
@@ -77,11 +121,12 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
           step="0.1" 
           value={river.flowDirection} 
           onChange={(e) => handleFlowDirectionChange(parseFloat(e.target.value))}
+          style={{ width: "80px" }}
         />
-        <span style={{ color: "black" }}> {river.flowDirection.toFixed(2)}</span>
+        <span style={{ color: "black", fontSize: "10px" }}> {river.flowDirection.toFixed(1)}</span>
       </div>
-      <div style={{ marginBottom: "10px" }}>
-        <label style={{ color: "black" }}>Flow Rate: </label>
+      <div style={{ marginBottom: "6px" }}>
+        <label style={{ color: "black", fontSize: "11px" }}>Flow Rate: </label>
         <input 
           type="range" 
           min="0" 
@@ -89,11 +134,12 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
           step="10" 
           value={river.flowRate} 
           onChange={(e) => handleFlowRateChange(parseFloat(e.target.value))}
+          style={{ width: "80px" }}
         />
-        <span style={{ color: "black" }}> {river.flowRate}</span>
+        <span style={{ color: "black", fontSize: "10px" }}> {river.flowRate}</span>
       </div>
-      <div style={{ marginBottom: "10px" }}>
-        <label style={{ color: "black" }}>Total Nutrients (kg): </label>
+      <div style={{ marginBottom: "6px" }}>
+        <label style={{ color: "black", fontSize: "11px" }}>Nutrients (kg): </label>
         <input 
           type="range" 
           min="0" 
@@ -101,11 +147,12 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
           step="5" 
           value={river.totalNutrients} 
           onChange={(e) => handleNutrientsChange(parseFloat(e.target.value))}
+          style={{ width: "80px" }}
         />
-        <span style={{ color: "black" }}> {river.totalNutrients.toFixed(1)}</span>
+        <span style={{ color: "black", fontSize: "10px" }}> {river.totalNutrients.toFixed(0)}</span>
       </div>
-      <div style={{ marginBottom: "10px" }}>
-        <label style={{ color: "black" }}>Temperature (°C): </label>
+      <div style={{ marginBottom: "6px" }}>
+        <label style={{ color: "black", fontSize: "11px" }}>Temperature (°C): </label>
         <input 
           type="range" 
           min="12" 
@@ -113,11 +160,12 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
           step="1" 
           value={river.temperature} 
           onChange={(e) => handleTemperatureChange(parseFloat(e.target.value))}
+          style={{ width: "80px" }}
         />
-        <span style={{ color: "black" }}> {river.temperature}°C</span>
+        <span style={{ color: "black", fontSize: "10px" }}> {river.temperature}°C</span>
       </div>
-      <div style={{ marginBottom: "10px" }}>
-        <label style={{ color: "black" }}>Sunlight (0.0-1.0): </label>
+      <div style={{ marginBottom: "6px" }}>
+        <label style={{ color: "black", fontSize: "11px" }}>Sunlight: </label>
         <input 
           type="range" 
           min="0" 
@@ -125,11 +173,12 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
           step="0.1" 
           value={river.sunlight} 
           onChange={(e) => handleSunlightChange(parseFloat(e.target.value))}
+          style={{ width: "80px" }}
         />
-        <span style={{ color: "black" }}> {river.sunlight.toFixed(1)}</span>
+        <span style={{ color: "black", fontSize: "10px" }}> {river.sunlight.toFixed(1)}</span>
       </div>
       <div>
-        <label style={{ color: "black" }}>Pollution Level (%): </label>
+        <label style={{ color: "black", fontSize: "11px" }}>Pollution (%): </label>
         <input 
           type="range" 
           min="0" 
@@ -137,22 +186,39 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
           step="1" 
           value={river.pollutionLevel} 
           onChange={(e) => handlePollutionChange(parseFloat(e.target.value))}
+          style={{ width: "80px" }}
         />
-        <span style={{ color: "black" }}> {river.pollutionLevel.toFixed(1)}%</span>
+        <span style={{ color: "black", fontSize: "10px" }}> {river.pollutionLevel.toFixed(0)}%</span>
       </div>
     </div>
   );
 };
 
-const SimulationControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
+const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
+  const [hyacinthCount, setHyacinthCount] = useState(5);
+  const [fishCount, setFishCount] = useState(3);
   const [simulationState, setSimulationState] = useState(getSimulationState());
+  const [speedMultiplier, setSpeedMultiplierState] = useState(getSpeedMultiplier());
 
   useEffect(() => {
     const unsubscribe = addStateChangeListener(() => {
       setSimulationState(getSimulationState());
+      setSpeedMultiplierState(getSpeedMultiplier());
     });
     return unsubscribe;
   }, []);
+
+  const handleSetup = () => {
+    // Reset agents first
+    // @ts-ignore
+    if (window.resetAgents) window.resetAgents();
+    
+    // Setup hyacinths and fish using batch functions
+    // @ts-ignore
+    if (window.setupHyacinths) window.setupHyacinths(hyacinthCount);
+    // @ts-ignore
+    if (window.setupFish) window.setupFish(fishCount);
+  };
 
   const handlePlay = () => {
     playSimulation();
@@ -174,64 +240,116 @@ const SimulationControls = ({ setRiver }: { setRiver: (river: River) => void }) 
     setRiver(resetRiverState);
   };
 
-  return (
-    <div style={{ 
-      backgroundColor: "rgba(255, 255, 255, 0.8)",
-      padding: "10px",
-      borderRadius: "5px",
-      display: "flex",
-      gap: 10,
-      border: "1px solid #ccc",
-      boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-    }}>
-      <button 
-        onClick={handlePlay} 
-        disabled={simulationState.isPlaying && !simulationState.isPaused}
-        style={{...buttonStyle, backgroundColor: simulationState.isPlaying && !simulationState.isPaused ? "#ccc" : "#4CAF50"}}
-      >
-        ▶️ Play
-      </button>
-      <button 
-        onClick={handlePause} 
-        disabled={!simulationState.isPlaying || simulationState.isPaused}
-        style={{...buttonStyle, backgroundColor: !simulationState.isPlaying || simulationState.isPaused ? "#ccc" : "#FF9800"}}
-      >
-        ⏸️ Pause
-      </button>
-      <button 
-        onClick={handleReset} 
-        style={{...buttonStyle, backgroundColor: "#f44336"}}
-      >
-        🔄 Reset
-      </button>
-    </div>
-  );
-};
-
-const AgentControls = () => {
-  const handleAddHyacinth = () => {
-    // @ts-ignore
-    if (window.addHyacinth) window.addHyacinth();
+  const handleSpeedChange = (value: number) => {
+    setSpeedMultiplier(value);
   };
 
-  const handleAddFish = () => {
-    // @ts-ignore
-    if (window.addFish) window.addFish();
-  };
+  const speedButtons = [
+    { label: "Very Slow", value: 0.1, color: "#2196F3" },
+    { label: "Slow", value: 0.5, color: "#4CAF50" },
+    { label: "Normal", value: 1, color: "#FF9800" },
+    { label: "Fast", value: 5, color: "#FF5722" },
+    { label: "Very Fast", value: 10, color: "#E91E63" },
+    { label: "Super Fast", value: 20, color: "#9C27B0" }
+  ];
 
   return (
     <div style={{ 
       backgroundColor: "rgba(255, 255, 255, 0.8)",
-      padding: "10px",
+      padding: "8px",
       borderRadius: "5px",
-      display: "flex",
-      gap: 10,
       border: "1px solid #ccc",
       boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-      marginBottom: "10px"
+      fontSize: "12px"
     }}>
-      <button onClick={handleAddHyacinth} style={buttonStyle}>Add Water Hyacinth</button>
-      <button onClick={handleAddFish} style={buttonStyle}>Add Fish</button>
+      <h4 style={{ margin: "0 0 8px 0", color: "black", fontSize: "14px" }}>Setup & Control</h4>
+      
+      {/* Simulation Controls */}
+      <div style={{ marginBottom: "8px", display: "flex", gap: "6px" }}>
+        <button 
+          onClick={handlePlay} 
+          disabled={simulationState.isPlaying && !simulationState.isPaused}
+          style={{...buttonStyle, backgroundColor: simulationState.isPlaying && !simulationState.isPaused ? "#ccc" : "#4CAF50", fontSize: "11px", padding: "4px 8px"}}
+        >
+          ▶️ Play
+        </button>
+        <button 
+          onClick={handlePause} 
+          disabled={!simulationState.isPlaying || simulationState.isPaused}
+          style={{...buttonStyle, backgroundColor: !simulationState.isPlaying || simulationState.isPaused ? "#ccc" : "#FF9800", fontSize: "11px", padding: "4px 8px"}}
+        >
+          ⏸️ Pause
+        </button>
+        <button 
+          onClick={handleReset} 
+          style={{...buttonStyle, backgroundColor: "#f44336", fontSize: "11px", padding: "4px 8px"}}
+        >
+          🔄 Reset
+        </button>
+      </div>
+
+      {/* Agent Setup */}
+      <div style={{ marginBottom: "6px" }}>
+        <label style={{ color: "black", fontSize: "11px" }}>Hyacinths: </label>
+        <input 
+          type="range" 
+          min="0" 
+          max="20" 
+          step="1" 
+          value={hyacinthCount} 
+          onChange={(e) => setHyacinthCount(parseInt(e.target.value))}
+          style={{ width: "80px" }}
+        />
+        <span style={{ color: "black", fontSize: "10px" }}> {hyacinthCount}</span>
+      </div>
+      <div style={{ marginBottom: "8px" }}>
+        <label style={{ color: "black", fontSize: "11px" }}>Fish: </label>
+        <input 
+          type="range" 
+          min="0" 
+          max="15" 
+          step="1" 
+          value={fishCount} 
+          onChange={(e) => setFishCount(parseInt(e.target.value))}
+          style={{ width: "80px" }}
+        />
+        <span style={{ color: "black", fontSize: "10px" }}> {fishCount}</span>
+      </div>
+      <button 
+        onClick={handleSetup} 
+        style={{...buttonStyle, fontSize: "12px", padding: "6px 12px", marginBottom: "8px"}}
+      >
+        🔧 Setup
+      </button>
+
+      {/* Speed Control Buttons */}
+      <div style={{ marginTop: "8px", borderTop: "1px solid #ddd", paddingTop: "8px" }}>
+        <div style={{ color: "black", fontSize: "11px", marginBottom: "6px", fontWeight: "bold" }}>
+          Speed Control:
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px" }}>
+          {speedButtons.map((button) => (
+            <button
+              key={button.value}
+              onClick={() => handleSpeedChange(button.value)}
+              style={{
+                ...buttonStyle,
+                backgroundColor: speedMultiplier === button.value ? button.color : "#f0f0f0",
+                color: speedMultiplier === button.value ? "white" : "black",
+                fontSize: "10px",
+                padding: "4px 6px",
+                border: speedMultiplier === button.value ? `2px solid ${button.color}` : "1px solid #ccc",
+                fontWeight: speedMultiplier === button.value ? "bold" : "normal"
+              }}
+            >
+              {button.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ color: "black", fontSize: "10px", marginTop: "4px", textAlign: "center" }}>
+          Current: {speedMultiplier}x
+        </div>
+      </div>
     </div>
   );
 };
@@ -273,6 +391,9 @@ const AppContent = () => {
       {/* Pollution display at the top center */}
       <PollutionDisplay pollutionLevel={river.pollutionLevel} />
       
+      {/* Tick display at the top center */}
+      <TickDisplay />
+      
       {/* Floating controls overlay */}
       <div style={{ 
         position: "absolute",
@@ -280,15 +401,12 @@ const AppContent = () => {
         left: "10px",
         right: "10px",
         display: "flex", 
-        justifyContent: "space-between",
+        justifyContent: "flex-start",
         zIndex: 1000,
         pointerEvents: "none"
       }}>
-        <div style={{ pointerEvents: "auto" }}>
-          <AgentControls />
-          <SimulationControls setRiver={setRiver} />
-        </div>
-        <div style={{ pointerEvents: "auto" }}>
+        <div style={{ pointerEvents: "auto", display: "flex", gap: "8px" }}>
+          <SetupControls setRiver={setRiver} />
           <RiverControls river={river} setRiver={setRiver} />
         </div>
       </div>

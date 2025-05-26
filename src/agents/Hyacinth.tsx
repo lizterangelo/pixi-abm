@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTick } from "@pixi/react";
 import { useApplication } from "@pixi/react";
 import { River } from "../environment/River";
-import { isSimulationRunning } from "../simulation/SimulationControl";
+import { isSimulationRunning, getSpeedMultiplier } from "../simulation/SimulationControl";
 
 // Biomass constants
 export const INIT_BIOMASS = 0.5;
@@ -138,11 +138,15 @@ export const HyacinthSprite = ({ hyacinth, allHyacinths, river, onPositionChange
   useTick((ticker) => {
     if (!spriteRef.current || !app || !isSimulationRunning()) return;
     
+    const baseDeltaTime = ticker.deltaTime;
+    const speedMultiplier = getSpeedMultiplier();
+    const deltaTime = baseDeltaTime * speedMultiplier;
+    
     // Update floating animation time
-    floatingTimeRef.current += ticker.deltaTime * 0.02; // Slow floating speed
+    floatingTimeRef.current += deltaTime * 0.02; // Slow floating speed
     
     // Handle biomass growth every second
-    lastGrowthUpdateRef.current += ticker.deltaTime / 60; // Convert to seconds
+    lastGrowthUpdateRef.current += deltaTime / 60; // Convert to seconds
     
     if (lastGrowthUpdateRef.current >= 1.0) {
       // Apply biomass growth using dynamically calculated growth rate
@@ -179,8 +183,8 @@ export const HyacinthSprite = ({ hyacinth, allHyacinths, river, onPositionChange
     }
     
     // Calculate river flow effect
-    const riverFlowX = Math.cos(river.flowDirection) * river.flowRate * ticker.deltaTime;
-    const riverFlowY = Math.sin(river.flowDirection) * river.flowRate * ticker.deltaTime;
+    const riverFlowX = Math.cos(river.flowDirection) * river.flowRate * deltaTime;
+    const riverFlowY = Math.sin(river.flowDirection) * river.flowRate * deltaTime;
     
     // Calculate new position with river flow
     let newX = hyacinth.x + riverFlowX * (1 - hyacinth.resistance);
