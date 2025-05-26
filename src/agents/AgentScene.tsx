@@ -1,17 +1,15 @@
 import { useApplication } from "@pixi/react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import {
   Hyacinth,
   HyacinthSprite,
   HYACINTH_SIZE,
   INIT_BIOMASS,
-  MAX_BIOMASS,
   calculateGrowthRate,
 } from "./Hyacinth";
 import { Fish, FishSprite } from "./Fish";
 import { River } from "../environment/River";
 import { SimulationManager } from "../simulation/SimulationManager";
-import { isSimulationRunning } from "../simulation/SimulationControl";
 import { v4 as uuidv4 } from "uuid";
 
 export const AgentScene = ({
@@ -99,13 +97,13 @@ export const AgentScene = ({
   };
 
   // Handle hyacinth updates
-  const handleHyacinthUpdate = (deltaTime: number) => {
+  const handleHyacinthUpdate = () => {
     // This will be handled by individual hyacinth components
     // We just need to pass the deltaTime to them
   };
 
   // Handle fish updates
-  const handleFishUpdate = (deltaTime: number) => {
+  const handleFishUpdate = () => {
     // This will be handled by individual fish components
     // We just need to pass the deltaTime to them
   };

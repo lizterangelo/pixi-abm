@@ -260,8 +260,8 @@ export const FishSprite = ({
       riverFlowY * (1 - fish.resistance);
 
     // Apply smooth edge wrapping for continuous flow
-    const halfWidth = spriteSize.width / 2;
-    const halfHeight = spriteSize.height / 2;
+    // const halfWidth = spriteSize.width / 2;
+    // const halfHeight = spriteSize.height / 2;
 
     // Smooth horizontal wrapping using modulo
     if (newX > app.screen.width) {

@@ -59,7 +59,6 @@ export const resetRiver = (): River => {
 
 // River controls functionality
 export const createRiverControls = (
-  river: River,
   setRiver: (river: River) => void,
 ) => {
   const handleFlowDirectionChange = (direction: number) => {

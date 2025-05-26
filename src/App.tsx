@@ -11,14 +11,11 @@ import {
 } from "./environment/River";
 import { useRef, useEffect, useState } from "react";
 import {
-  playSimulation,
-  pauseSimulation,
   resetSimulation,
   getSimulationState,
   addStateChangeListener,
   setSpeedMultiplier,
   getSpeedMultiplier,
-  getTickCount,
   getDayCount,
   togglePlayPause,
 } from "./simulation/SimulationControl";
@@ -581,48 +578,6 @@ const PollutionDisplay = ({ pollutionLevel }: { pollutionLevel: number }) => {
   );
 };
 
-const TickDisplay = () => {
-  const [tickCount, setTickCount] = useState(getTickCount());
-  const [speedMultiplier, setSpeedMultiplierState] =
-    useState(getSpeedMultiplier());
-
-  useEffect(() => {
-    const unsubscribe = addStateChangeListener(() => {
-      setTickCount(getTickCount());
-      setSpeedMultiplierState(getSpeedMultiplier());
-    });
-    return unsubscribe;
-  }, []);
-
-  const getSpeedLabel = (value: number) => {
-    if (value === 0.1) return "Very Slow";
-    if (value === 0.5) return "Slow";
-    if (value === 1) return "Normal";
-    if (value === 5) return "Fast";
-    if (value === 10) return "Very Fast";
-    if (value === 20) return "Super Fast";
-    return `${value}x`;
-  };
-
-  return (
-    <div
-      style={{
-        backgroundColor: "rgba(255, 255, 255, 0.9)",
-        padding: "6px 12px",
-        borderRadius: "15px",
-        border: "2px solid #2196F3",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-        fontWeight: "bold",
-        color: "#1976D2",
-        fontSize: "12px",
-        whiteSpace: "nowrap",
-      }}
-    >
-      ⏱️ Speed: {getSpeedLabel(speedMultiplier)}
-    </div>
-  );
-};
-
 const FishCountDisplay = ({ fishCount }: { fishCount: number }) => {
   return (
     <div
@@ -677,7 +632,7 @@ const RiverControls = ({
     handleTemperatureChange,
     handleSunlightChange,
     handlePollutionChange,
-  } = createRiverControls(river, setRiver);
+  } = createRiverControls(setRiver);
 
   return (
     <div
@@ -880,14 +835,6 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
     if (window.resetAgents) window.resetAgents();
 
     // Explicitly set desired river parameters after general reset
-    const specificRiverSettings = updateRiver({
-      pollutionLevel: 100, // Override: Set pollution to 100%
-      totalNutrients: 500, // Override: Set nutrients to 500 kg
-      // Other river parameters will retain values from a full resetRiver() if we were to call it,
-      // or retain current values if we don't call a full resetRiver().
-      // For safety and to ensure other defaults are also set (like DO, flow rate etc. from resetRiver):
-      // Call resetRiver() first, then override specific values.
-    });
     // To ensure all other default values from resetRiver() are applied first:
     let riverStateAfterFullReset = resetRiver();
     riverStateAfterFullReset = updateRiver({
@@ -901,15 +848,6 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
   const handleSpeedChange = (value: number) => {
     setSpeedMultiplier(value);
   };
-
-  const speedButtons = [
-    { label: "Very Slow", value: 0.1, color: "#2196F3" },
-    { label: "Slow", value: 0.5, color: "#4CAF50" },
-    { label: "Normal", value: 1, color: "#FF9800" },
-    { label: "Fast", value: 5, color: "#FF5722" },
-    { label: "Very Fast", value: 10, color: "#E91E63" },
-    { label: "Super Fast", value: 20, color: "#9C27B0" },
-  ];
 
   return (
     <div

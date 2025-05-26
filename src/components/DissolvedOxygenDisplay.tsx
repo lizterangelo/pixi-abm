@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import { River } from "../environment/River"; // Assuming River interface might be needed or for consistency
+// Remove unused imports since this is a simple display component
+// import { useEffect, useState } from "react";
+// import { River } from "../environment/River";
 
 interface DissolvedOxygenDisplayProps {
   currentDO: number;

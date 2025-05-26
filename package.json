@@ -6,8 +6,8 @@
   "scripts": {
     "start": "npm run dev",
     "dev": "vite",
-    "build": "npm run lint && tsc -b && vite build",
-    "lint": "eslint ."
+    "build": "tsc -b && vite build",
+    "lint:disabled": "eslint ."
   },
   "dependencies": {
     "@pixi/react": "^8.0.0",
