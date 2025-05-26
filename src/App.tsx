@@ -13,6 +13,183 @@ extend({
   Sprite,
 });
 
+// Interface for population data points
+interface PopulationDataPoint {
+  day: number;
+  fishCount: number;
+  hyacinthCount: number;
+}
+
+const PopulationGraph = ({ populationData }: { populationData: PopulationDataPoint[] }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || populationData.length === 0) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Graph dimensions
+    const padding = 30;
+    const graphWidth = canvas.width - 2 * padding;
+    const graphHeight = canvas.height - 2 * padding;
+    
+    // Find max values for scaling
+    const maxDay = Math.max(...populationData.map(d => d.day), 1);
+    const maxPopulation = Math.max(
+      ...populationData.map(d => Math.max(d.fishCount, d.hyacinthCount)),
+      1
+    );
+    
+    // Draw background
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw border
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(padding, padding, graphWidth, graphHeight);
+    
+    // Draw grid lines
+    ctx.strokeStyle = '#ddd';
+    ctx.lineWidth = 1;
+    
+    // Vertical grid lines (time)
+    for (let i = 0; i <= 5; i++) {
+      const x = padding + (i / 5) * graphWidth;
+      ctx.beginPath();
+      ctx.moveTo(x, padding);
+      ctx.lineTo(x, padding + graphHeight);
+      ctx.stroke();
+    }
+    
+    // Horizontal grid lines (population)
+    for (let i = 0; i <= 5; i++) {
+      const y = padding + (i / 5) * graphHeight;
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(padding + graphWidth, y);
+      ctx.stroke();
+    }
+    
+    // Draw axes labels
+    ctx.fillStyle = '#333';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    
+    // X-axis label
+    ctx.fillText('Days', canvas.width / 2, canvas.height - 5);
+    
+    // Y-axis label
+    ctx.save();
+    ctx.translate(15, canvas.height / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Population', 0, 0);
+    ctx.restore();
+    
+    // Draw scale numbers
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    
+    // X-axis numbers
+    for (let i = 0; i <= 5; i++) {
+      const x = padding + (i / 5) * graphWidth;
+      const dayValue = (i / 5) * maxDay;
+      ctx.fillText(dayValue.toFixed(0), x, canvas.height - padding + 15);
+    }
+    
+    // Y-axis numbers
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 5; i++) {
+      const y = padding + graphHeight - (i / 5) * graphHeight;
+      const popValue = (i / 5) * maxPopulation;
+      ctx.fillText(popValue.toFixed(0), padding - 5, y + 3);
+    }
+    
+    if (populationData.length < 2) return;
+    
+    // Draw fish line (blue)
+    ctx.strokeStyle = '#2196F3';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    
+    populationData.forEach((point, index) => {
+      const x = padding + (point.day / maxDay) * graphWidth;
+      const y = padding + graphHeight - (point.fishCount / maxPopulation) * graphHeight;
+      
+      if (index === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    });
+    ctx.stroke();
+    
+    // Draw hyacinth line (green)
+    ctx.strokeStyle = '#4CAF50';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    
+    populationData.forEach((point, index) => {
+      const x = padding + (point.day / maxDay) * graphWidth;
+      const y = padding + graphHeight - (point.hyacinthCount / maxPopulation) * graphHeight;
+      
+      if (index === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    });
+    ctx.stroke();
+    
+    // Draw legend
+    const legendX = canvas.width - 80;
+    const legendY = 20;
+    
+    // Fish legend
+    ctx.fillStyle = '#2196F3';
+    ctx.fillRect(legendX, legendY, 15, 3);
+    ctx.fillStyle = '#333';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText('🐟 Fish', legendX + 20, legendY + 10);
+    
+    // Hyacinth legend
+    ctx.fillStyle = '#4CAF50';
+    ctx.fillRect(legendX, legendY + 20, 15, 3);
+    ctx.fillStyle = '#333';
+    ctx.fillText('🌿 Hyacinths', legendX + 20, legendY + 30);
+    
+  }, [populationData]);
+  
+  return (
+    <div style={{
+      position: "absolute",
+      bottom: "10px",
+      right: "10px",
+      backgroundColor: "rgba(255, 255, 255, 0.95)",
+      borderRadius: "8px",
+      border: "2px solid #333",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+      zIndex: 1001,
+      padding: "5px"
+    }}>
+      <canvas
+        ref={canvasRef}
+        width={300}
+        height={200}
+        style={{
+          display: "block"
+        }}
+      />
+    </div>
+  );
+};
+
 const NutrientsDisplay = ({ totalNutrients }: { totalNutrients: number }) => {
   return (
     <div style={{
@@ -455,6 +632,8 @@ const AppContent = () => {
   const [river, setRiver] = useState<River>(createRiver());
   const [fishCount, setFishCount] = useState(0);
   const [hyacinthCount, setHyacinthCount] = useState(0);
+  const [populationData, setPopulationData] = useState<PopulationDataPoint[]>([]);
+  const lastRecordedDay = useRef<number>(-1);
   
   // Handle nutrient consumption by hyacinths
   const handleNutrientConsumption = (consumedAmount: number) => {
@@ -483,7 +662,37 @@ const AppContent = () => {
   const handleCountsChange = (newFishCount: number, newHyacinthCount: number) => {
     setFishCount(newFishCount);
     setHyacinthCount(newHyacinthCount);
+    
+    // Record population data every day
+    const currentDay = getDayCount();
+    if (currentDay !== lastRecordedDay.current) {
+      lastRecordedDay.current = currentDay;
+      
+      setPopulationData(prevData => {
+        const newDataPoint: PopulationDataPoint = {
+          day: currentDay,
+          fishCount: newFishCount,
+          hyacinthCount: newHyacinthCount
+        };
+        
+        // Keep only the last 100 data points to prevent memory issues
+        const updatedData = [...prevData, newDataPoint];
+        return updatedData.length > 100 ? updatedData.slice(-100) : updatedData;
+      });
+    }
   };
+
+  // Reset population data when simulation is reset
+  useEffect(() => {
+    const unsubscribe = addStateChangeListener(() => {
+      const currentDay = getDayCount();
+      if (currentDay === 0 && lastRecordedDay.current !== 0) {
+        setPopulationData([]);
+        lastRecordedDay.current = -1;
+      }
+    });
+    return unsubscribe;
+  }, []);
   
   return (
     <div style={{ 
@@ -514,6 +723,9 @@ const AppContent = () => {
 
       {/* Hyacinth count display */}
       <HyacinthCountDisplay hyacinthCount={hyacinthCount} />
+
+      {/* Population graph */}
+      <PopulationGraph populationData={populationData} />
       
       {/* Floating controls overlay */}
       <div style={{ 
