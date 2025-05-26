@@ -3,7 +3,7 @@ export interface River {
   flowRate: number;     // pixels per second
 }
 
-export const createRiver = (direction: number = 0, rate: number = 50): River => {
+export const createRiver = (direction: number = 0, rate: number = 0): River => {
   return {
     flowDirection: direction,
     flowRate: rate
