@@ -1,10 +1,8 @@
 import { Application, extend } from "@pixi/react";
 import { Container, Sprite } from "pixi.js";
 import { AgentScene } from "./agents/AgentScene";
-import { useEnvironment } from "./environment/EnvironmentContext";
-import { createRiver } from "./environment/River";
-import { EnvironmentProvider } from "./environment/EnvironmentContext";
-import { useRef, useEffect } from "react";
+import { River, createRiver, createRiverControls, updateRiver, resetRiver, getRiver } from "./environment/River";
+import { useRef, useEffect, useState } from "react";
 
 // extend tells @pixi/react what Pixi.js components are available
 extend({
@@ -12,18 +10,29 @@ extend({
   Sprite,
 });
 
-const RiverControls = () => {
-  const { river, setRiver } = useEnvironment();
+const NutrientsDisplay = ({ totalNutrients }: { totalNutrients: number }) => {
+  return (
+    <div style={{
+      position: "absolute",
+      top: "10px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      backgroundColor: "rgba(0, 0, 0, 0.7)",
+      color: "white",
+      padding: "10px 20px",
+      borderRadius: "5px",
+      fontSize: "18px",
+      fontWeight: "bold",
+      zIndex: 1001,
+      pointerEvents: "none"
+    }}>
+      Total Nutrients: {totalNutrients.toFixed(2)} kg
+    </div>
+  );
+};
 
-  const handleFlowDirectionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const direction = parseFloat(e.target.value);
-    setRiver({ ...river, flowDirection: direction });
-  };
-
-  const handleFlowRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rate = parseFloat(e.target.value);
-    setRiver({ ...river, flowRate: rate });
-  };
+const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: River) => void }) => {
+  const { handleFlowDirectionChange, handleFlowRateChange, handleNutrientsChange, handleTemperatureChange, handleSunlightChange } = createRiverControls(river, setRiver);
 
   return (
     <div style={{ 
@@ -42,11 +51,11 @@ const RiverControls = () => {
           max="6.28" 
           step="0.1" 
           value={river.flowDirection} 
-          onChange={handleFlowDirectionChange}
+          onChange={(e) => handleFlowDirectionChange(parseFloat(e.target.value))}
         />
         <span> {river.flowDirection.toFixed(2)}</span>
       </div>
-      <div>
+      <div style={{ marginBottom: "10px" }}>
         <label>Flow Rate: </label>
         <input 
           type="range" 
@@ -54,15 +63,51 @@ const RiverControls = () => {
           max="200" 
           step="10" 
           value={river.flowRate} 
-          onChange={handleFlowRateChange}
+          onChange={(e) => handleFlowRateChange(parseFloat(e.target.value))}
         />
         <span> {river.flowRate}</span>
+      </div>
+      <div style={{ marginBottom: "10px" }}>
+        <label>Total Nutrients (kg): </label>
+        <input 
+          type="range" 
+          min="0" 
+          max="500" 
+          step="5" 
+          value={river.totalNutrients} 
+          onChange={(e) => handleNutrientsChange(parseFloat(e.target.value))}
+        />
+        <span> {river.totalNutrients.toFixed(1)}</span>
+      </div>
+      <div style={{ marginBottom: "10px" }}>
+        <label>Temperature (°C): </label>
+        <input 
+          type="range" 
+          min="20" 
+          max="40" 
+          step="1" 
+          value={river.temperature} 
+          onChange={(e) => handleTemperatureChange(parseFloat(e.target.value))}
+        />
+        <span> {river.temperature}°C</span>
+      </div>
+      <div>
+        <label>Sunlight (0.0-1.0): </label>
+        <input 
+          type="range" 
+          min="0" 
+          max="1" 
+          step="0.1" 
+          value={river.sunlight} 
+          onChange={(e) => handleSunlightChange(parseFloat(e.target.value))}
+        />
+        <span> {river.sunlight.toFixed(1)}</span>
       </div>
     </div>
   );
 };
 
-const AgentControls = () => {
+const AgentControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
   const handleAddHyacinth = () => {
     // @ts-ignore
     if (window.addHyacinth) window.addHyacinth();
@@ -76,6 +121,10 @@ const AgentControls = () => {
   const handleReset = () => {
     // @ts-ignore
     if (window.resetAgents) window.resetAgents();
+    
+    // Reset the river to initial state
+    const resetRiverState = resetRiver();
+    setRiver(resetRiverState);
   };
 
   return (
@@ -97,42 +146,65 @@ const AgentControls = () => {
 
 const AppContent = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [river, setRiver] = useState<River>(createRiver()); // This will always return the same singleton instance
+  
+  // Handle nutrient consumption by hyacinths
+  const handleNutrientConsumption = (consumedAmount: number) => {
+    const currentRiver = getRiver(); // Get the current singleton state
+    const updatedRiver = updateRiver({ 
+      totalNutrients: Math.max(0, currentRiver.totalNutrients - consumedAmount) 
+    });
+    setRiver(updatedRiver);
+  };
   
   return (
     <div style={{ 
       display: "flex", 
       flexDirection: "column", 
-      padding: "20px", 
-      gap: "20px", 
       height: "100vh", 
-      boxSizing: "border-box" 
+      width: "100vw",
+      boxSizing: "border-box",
+      position: "relative"
     }}>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <AgentControls />
-        <RiverControls />
+      {/* Nutrients display at the top center */}
+      <NutrientsDisplay totalNutrients={river.totalNutrients} />
+      
+      {/* Floating controls overlay */}
+      <div style={{ 
+        position: "absolute",
+        top: "10px",
+        left: "10px",
+        right: "10px",
+        display: "flex", 
+        justifyContent: "space-between",
+        zIndex: 1000,
+        pointerEvents: "none"
+      }}>
+        <div style={{ pointerEvents: "auto" }}>
+          <AgentControls setRiver={setRiver} />
+        </div>
+        <div style={{ pointerEvents: "auto" }}>
+          <RiverControls river={river} setRiver={setRiver} />
+        </div>
       </div>
       
+      {/* Full screen simulation */}
       <div 
         ref={containerRef}
         style={{ 
-          flex: 1, 
-          border: "2px solid #666", 
-          borderRadius: "8px", 
+          width: "100vw",
+          height: "100vh",
           overflow: "hidden",
-          boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-          position: "relative",
-          display: "flex"
+          position: "relative"
         }}
       >
-        <div style={{ position: "absolute", width: "100%", height: "100%" }}>
-          <Application 
-            background={"#1099bb"} 
-            resizeTo={containerRef}
-            autoDensity={true}
-          >
-            <AgentScene />
-          </Application>
-        </div>
+        <Application 
+          background={"#1099bb"} 
+          resizeTo={containerRef}
+          autoDensity={true}
+        >
+          <AgentScene river={river} onNutrientConsumption={handleNutrientConsumption} />
+        </Application>
       </div>
     </div>
   );
@@ -140,9 +212,7 @@ const AppContent = () => {
 
 export default function App() {
   return (
-    <EnvironmentProvider>
-      <AppContent />
-    </EnvironmentProvider>
+    <AppContent />
   );
 }
 

@@ -1,28 +1,60 @@
 import { useApplication } from "@pixi/react";
 import { useEffect, useState, useRef } from "react";
-import { Hyacinth, HyacinthSprite, HYACINTH_SIZE } from "./Hyacinth";
+import { Hyacinth, HyacinthSprite, HYACINTH_SIZE, INIT_BIOMASS, MAX_BIOMASS } from "./Hyacinth";
 import { Fish, FishSprite } from "./Fish";
+import { River } from "../environment/River";
+import { useTick } from "@pixi/react";
 
-export const AgentScene = () => {
+// Calculate growth rate based on environmental factors
+const calculateGrowthRate = (temperature: number, sunlight: number, nur: number): number => {
+  // Temperature factor (optimal around 30°C)
+  const tempFactor = temperature >= 25 && temperature <= 35 
+    ? 1.0 - Math.abs(temperature - 30) / 10 // Peak at 30°C, decreases towards 25°C and 35°C
+    : 0.1; // Very low growth outside optimal range
+  
+  // Sunlight factor (linear relationship)
+  const sunlightFactor = sunlight;
+  
+  // Nutrient factor (higher NUR = better growth)
+  const nutrientFactor = nur / 0.05; // Normalize to 0.05 max NUR
+  
+  // Combined growth rate (0.0 to 1.0 scale) with base growth rate
+  return tempFactor * sunlightFactor * nutrientFactor * 0.1; // 0.1 is the base growth rate
+};
+
+export const AgentScene = ({ river, onNutrientConsumption }: { river: River, onNutrientConsumption: (consumedAmount: number) => void }) => {
   const { app } = useApplication();
   const [hyacinths, setHyacinths] = useState<Hyacinth[]>([]);
   const [fish, setFish] = useState<Fish[]>([]);
   const [hyacinthIdCounter, setHyacinthIdCounter] = useState(0);
   const [fishIdCounter, setFishIdCounter] = useState(0);
+  const lastNutrientUpdateRef = useRef<number>(0);
 
-  // Add the first hyacinth in the center when the app loads
-  useEffect(() => {
-    if (!app) return;
+  // Handle nutrient consumption by hyacinths using useTick for accuracy
+  useTick((ticker) => {
+    // Accumulate time in seconds
+    lastNutrientUpdateRef.current += ticker.deltaTime / 60; // deltaTime is in frames, convert to seconds (assuming 60 FPS)
     
-    setHyacinths([{ 
-      id: 0, 
-      x: app.screen.width / 2, 
-      y: app.screen.height / 2,
-      rotationSpeed: 0.1,
-      resistance: 0.5 // Add resistance property
-    }]);
-    setHyacinthIdCounter(1);
-  }, [app]);
+    // Check if a full second has passed
+    if (lastNutrientUpdateRef.current >= 1.0) {
+      if (hyacinths.length > 0 && river.totalNutrients > 0) {
+        // Calculate total NUR from all hyacinths
+        const totalNUR = hyacinths.reduce((sum, hyacinth) => sum + hyacinth.nur, 0);
+        
+        // Use NUR as raw consumption rate per second (kg/second)
+        const consumptionPerSecond = totalNUR;
+        
+        // console.log(`Total Nutrients: ${river.totalNutrients.toFixed(2)} kg | Consuming: ${consumptionPerSecond.toFixed(4)} kg/s | Hyacinths: ${hyacinths.length}`);
+        
+        // Consume nutrients every second
+        if (consumptionPerSecond > 0) {
+          onNutrientConsumption(consumptionPerSecond);
+        }
+      }
+      // Reset the timer
+      lastNutrientUpdateRef.current = 0;
+    }
+  });
 
   // Check if a position overlaps with existing hyacinths
   const checkOverlap = (x: number, y: number, minDistance: number): boolean => {
@@ -76,12 +108,23 @@ export const AgentScene = () => {
     
     // Add the hyacinth
     if (foundValidPosition) {
+      const nur = 0.01 + Math.random() * 0.04; // Generate NUR once
+      const growthRate = calculateGrowthRate(river.temperature, river.sunlight, nur); // Calculate growth rate
+      
       setHyacinths([...hyacinths, { 
         id: hyacinthIdCounter, 
         x: x!, 
         y: y!,
         rotationSpeed: 0.1,
-        resistance: Math.random() * 0.5 + 0.5 // Random resistance between 0.5 and 1.0
+        resistance: Math.random() * 0.5 + 0.5, // Random resistance between 0.5 and 1.0
+        biomass: INIT_BIOMASS, // Start with initial biomass
+        nur: nur, // Use the generated NUR
+        growthRate: growthRate, // Use the calculated growth rate
+        parent: null, // Original hyacinths have no parent
+        daughters: [], // Start with no daughters
+        currentDaughters: 0, // No daughters produced yet
+        futureDaughters: Math.floor(Math.random() * 4) + 1, // Random 1-4 future daughters
+        biomassGained: 0 // Start with no biomass gained
       }]);
       setHyacinthIdCounter(hyacinthIdCounter + 1);
     }
@@ -119,6 +162,74 @@ export const AgentScene = () => {
     );
   };
 
+  // Handle hyacinth biomass updates
+  const handleHyacinthBiomassChange = (id: number, newBiomass: number) => {
+    setHyacinths(currentHyacinths => 
+      currentHyacinths.map(hyacinth => {
+        if (hyacinth.id === id) {
+          return { 
+            ...hyacinth, 
+            biomass: newBiomass
+          };
+        }
+        return hyacinth;
+      })
+    );
+  };
+
+  // Handle hyacinth biomass gained updates
+  const handleHyacinthBiomassGainedChange = (id: number, newBiomassGained: number) => {
+    setHyacinths(currentHyacinths => 
+      currentHyacinths.map(hyacinth => 
+        hyacinth.id === id ? { ...hyacinth, biomassGained: newBiomassGained } : hyacinth
+      )
+    );
+  };
+
+  // Handle hyacinth reproduction
+  const handleHyacinthReproduction = (parentId: number, x: number, y: number) => {
+    const parent = hyacinths.find(h => h.id === parentId);
+    if (!parent) return;
+
+    // Create daughter hyacinth with unique ID
+    const daughterId = hyacinthIdCounter;
+    const nur = 0.01 + Math.random() * 0.04; // Generate NUR for daughter
+    const growthRate = calculateGrowthRate(river.temperature, river.sunlight, nur);
+    
+    const daughter: Hyacinth = {
+      id: daughterId,
+      x,
+      y,
+      rotationSpeed: 0.1,
+      resistance: parent.resistance + (Math.random() - 0.5) * 0.1, // Slight variation from parent
+      biomass: INIT_BIOMASS,
+      nur: nur,
+      growthRate: growthRate,
+      parent: parentId, // Set parent ID
+      daughters: [],
+      currentDaughters: 0,
+      futureDaughters: Math.floor(Math.random() * 4) + 1, // Random 1-4 future daughters
+      biomassGained: 0
+    };
+
+    // Update parent and add daughter
+    setHyacinths(currentHyacinths => 
+      currentHyacinths.map(hyacinth => {
+        if (hyacinth.id === parentId) {
+          return {
+            ...hyacinth,
+            daughters: [...hyacinth.daughters, daughterId],
+            currentDaughters: hyacinth.currentDaughters + 1,
+            biomassGained: 0 // Reset biomass gained after reproduction
+          };
+        }
+        return hyacinth;
+      }).concat(daughter)
+    );
+    
+    setHyacinthIdCounter(hyacinthIdCounter + 1);
+  };
+
   // Handle fish position updates
   const handleFishPositionChange = (id: number, x: number, y: number) => {
     setFish(currentFish => 
@@ -127,6 +238,7 @@ export const AgentScene = () => {
       )
     );
   };
+
 
   // Make these functions available to the parent
   useEffect(() => {
@@ -146,13 +258,19 @@ export const AgentScene = () => {
         <HyacinthSprite 
           key={hyacinth.id} 
           hyacinth={hyacinth} 
+          allHyacinths={hyacinths}
+          river={river}
           onPositionChange={handleHyacinthPositionChange}
+          onBiomassChange={handleHyacinthBiomassChange}
+          onBiomassGainedChange={handleHyacinthBiomassGainedChange}
+          onReproduction={handleHyacinthReproduction}
         />
       ))}
       {fish.map(fish => (
         <FishSprite 
           key={fish.id} 
           fish={fish} 
+          river={river}
           onPositionChange={handleFishPositionChange}
         />
       ))}

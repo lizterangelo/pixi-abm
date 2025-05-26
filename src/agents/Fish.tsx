@@ -1,8 +1,8 @@
 import { Assets, Sprite, Texture } from "pixi.js";
 import { useEffect, useRef, useState } from "react";
 import { useTick } from "@pixi/react";
-import { useEnvironment } from "../environment/EnvironmentContext";
 import { useApplication } from "@pixi/react";
+import { River } from "../environment/River";
 
 export interface Fish {
   id: number;
@@ -19,13 +19,13 @@ export interface Fish {
 
 interface FishSpriteProps {
   fish: Fish;
+  river: River;
   onPositionChange: (id: number, x: number, y: number) => void;
 }
 
-export const FishSprite = ({ fish, onPositionChange }: FishSpriteProps) => {
+export const FishSprite = ({ fish, river, onPositionChange }: FishSpriteProps) => {
   const spriteRef = useRef<Sprite>(null);
   const [texture, setTexture] = useState(Texture.EMPTY);
-  const { river } = useEnvironment();
   const [spriteSize, setSpriteSize] = useState({ width: 0, height: 0 });
   const [fishState, setFishState] = useState<Fish>({...fish, vx: 0, vy: 0, movementTimer: 0});
   const { app } = useApplication();
