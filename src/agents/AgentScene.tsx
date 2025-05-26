@@ -3,69 +3,12 @@ import { useEffect, useState, useRef } from "react";
 import { Hyacinth, HyacinthSprite, HYACINTH_SIZE } from "./Hyacinth";
 import { Fish, FishSprite } from "./Fish";
 
-// Grid parameters
-const GRID_SIZE = 50; // pixels
-const ENV_WIDTH = 1200;
-const ENV_HEIGHT = 900;
-const GRID_COLS = Math.ceil(ENV_WIDTH / GRID_SIZE);
-const GRID_ROWS = Math.ceil(ENV_HEIGHT / GRID_SIZE);
-
-// Utility to get grid cell index
-function getCellIndex(x: number, y: number) {
-  return {
-    col: Math.floor(x / GRID_SIZE),
-    row: Math.floor(y / GRID_SIZE)
-  };
-}
-
-// Declare getMatDensity on Window
-declare global {
-  interface Window {
-    getMatDensity: (x: number, y: number) => number;
-  }
-}
-
-export const AgentScene = ({ onCountsChange }: { onCountsChange?: (counts: { hyacinths: number, fish: number }) => void }) => {
+export const AgentScene = () => {
   const { app } = useApplication();
   const [hyacinths, setHyacinths] = useState<Hyacinth[]>([]);
   const [fish, setFish] = useState<Fish[]>([]);
   const [hyacinthIdCounter, setHyacinthIdCounter] = useState(0);
   const [fishIdCounter, setFishIdCounter] = useState(0);
-
-  // Mat density grid (2D array)
-  const matDensityGrid = useRef(Array.from({ length: GRID_ROWS }, () => Array(GRID_COLS).fill(0)));
-
-  // Update mat density grid on each hyacinth update
-  useEffect(() => {
-    // Reset grid
-    for (let r = 0; r < GRID_ROWS; r++) {
-      for (let c = 0; c < GRID_COLS; c++) {
-        matDensityGrid.current[r][c] = 0;
-      }
-    }
-    // Sum biomass in each cell
-    hyacinths.forEach(h => {
-      const { col, row } = getCellIndex(h.x, h.y);
-      if (row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLS) {
-        matDensityGrid.current[row][col] += h.size;
-      }
-    });
-    // Expose a function to get local mat density
-    window.getMatDensity = (x: number, y: number) => {
-      const { col, row } = getCellIndex(x, y);
-      if (row >= 0 && row < GRID_ROWS && col >= 0 && col < GRID_COLS) {
-        return matDensityGrid.current[row][col];
-      }
-      return 0;
-    };
-  }, [hyacinths]);
-
-  // Report counts whenever hyacinths or fish change
-  useEffect(() => {
-    if (onCountsChange) {
-      onCountsChange({ hyacinths: hyacinths.length, fish: fish.length });
-    }
-  }, [hyacinths, fish, onCountsChange]);
 
   // Add the first hyacinth in the center when the app loads
   useEffect(() => {
@@ -76,16 +19,7 @@ export const AgentScene = ({ onCountsChange }: { onCountsChange?: (counts: { hya
       x: app.screen.width / 2, 
       y: app.screen.height / 2,
       rotationSpeed: 0.1,
-      resistance: 0.5,
-      size: 0.1,
-      growthRate: 0.1,
-      reproductiveRate: 0.5,
-      age: 0,
-      stuck: Math.random() < 0.35,
-      stuckTime: null,
-      nutrientUptakeRate: 0.01 + Math.random() * 0.04,
-      pollutantAbsorption: 0.005 + Math.random() * 0.015,
-      isDaughterPlant: false
+      resistance: 0.5 // Add resistance property
     }]);
     setHyacinthIdCounter(1);
   }, [app]);
@@ -108,8 +42,10 @@ export const AgentScene = ({ onCountsChange }: { onCountsChange?: (counts: { hya
     const size = Math.max(HYACINTH_SIZE.width, HYACINTH_SIZE.height);
     
     // Allow for some overlap considering transparency
+    // We can use a smaller distance factor since there's transparent space around the actual plant
+    // 0.7 means we allow about 30% overlap between the images (mostly transparent areas)
     const overlapFactor = 0.7; 
-    const minDistance = size > 0 ? size * overlapFactor : 20;
+    const minDistance = size > 0 ? size * overlapFactor : 20; // Fallback if size not initialized yet
     
     // Try to find a position that doesn't overlap too much (max 50 attempts)
     let x, y;
@@ -120,7 +56,8 @@ export const AgentScene = ({ onCountsChange }: { onCountsChange?: (counts: { hya
       x = Math.random() * app.screen.width;
       y = Math.random() * app.screen.height;
       
-      const edgePadding = size / 2 || 15;
+      // Keep hyacinths away from edges
+      const edgePadding = size / 2 || 15; // Fallback if size not initialized yet
       x = Math.max(edgePadding, Math.min(app.screen.width - edgePadding, x));
       y = Math.max(edgePadding, Math.min(app.screen.height - edgePadding, y));
       
@@ -131,75 +68,20 @@ export const AgentScene = ({ onCountsChange }: { onCountsChange?: (counts: { hya
       attempts++;
     }
     
+    // If we couldn't find a good position after max attempts, use the last attempted position
+    // This ensures we can keep adding hyacinths even when the screen gets crowded
     if (!foundValidPosition && attempts >= 50) {
       foundValidPosition = true;
     }
     
+    // Add the hyacinth
     if (foundValidPosition) {
       setHyacinths([...hyacinths, { 
         id: hyacinthIdCounter, 
         x: x!, 
         y: y!,
         rotationSpeed: 0.1,
-        resistance: Math.random() * 0.5 + 0.5,
-        size: 0.1,
-        growthRate: 0.1,
-        reproductiveRate: 0.5,
-        age: 0,
-        stuck: Math.random() < 0.8,
-        stuckTime: null,
-        nutrientUptakeRate: 0.01 + Math.random() * 0.04,
-        pollutantAbsorption: 0.005 + Math.random() * 0.015,
-        isDaughterPlant: false
-      }]);
-      setHyacinthIdCounter(hyacinthIdCounter + 1);
-    }
-  };
-
-  // Handle hyacinth growth
-  const handleHyacinthGrowth = (id: number, updates: Partial<Hyacinth>) => {
-    setHyacinths(currentHyacinths =>
-      currentHyacinths.map(hyacinth =>
-        hyacinth.id === id ? { ...hyacinth, ...updates } : hyacinth
-      )
-    );
-  };
-
-  // Handle hyacinth reproduction
-  const handleHyacinthReproduction = (parentId: number) => {
-    const parent = hyacinths.find(h => h.id === parentId);
-    if (!parent || !app) return;
-
-    // Create a new hyacinth near the parent
-    const angle = Math.random() * Math.PI * 2;
-    const distance = HYACINTH_SIZE.width * 1.5;
-    const x = parent.x + Math.cos(angle) * distance;
-    const y = parent.y + Math.sin(angle) * distance;
-
-    // Check if the new position is valid
-    if (x < 0 || x > app.screen.width || y < 0 || y > app.screen.height) {
-      return;
-    }
-
-    if (!checkOverlap(x, y, HYACINTH_SIZE.width)) {
-      setHyacinths([...hyacinths, {
-        id: hyacinthIdCounter,
-        x,
-        y,
-        rotationSpeed: 0.1,
-        resistance: Math.random() * 0.5 + 0.5,
-        size: 0.05 + Math.random() * 0.15,
-        growthRate: 0.1,
-        reproductiveRate: 0.5,
-        age: 0,
-        stuck: Math.random() < 0.8,
-        stuckTime: null,
-        nutrientUptakeRate: 0.01 + Math.random() * 0.04,
-        pollutantAbsorption: 0.005 + Math.random() * 0.015,
-        isDaughterPlant: true,
-        parentId: parentId,
-        growthRateMultiplier: 1.2 + Math.random() * 0.3,
-        connected: true
+        resistance: Math.random() * 0.5 + 0.5 // Random resistance between 0.5 and 1.0
       }]);
       setHyacinthIdCounter(hyacinthIdCounter + 1);
     }
@@ -217,7 +99,7 @@ export const AgentScene = ({ onCountsChange }: { onCountsChange?: (counts: { hya
       x, 
       y,
       rotationSpeed: 0.1,
-      resistance: Math.random() * 0.5 + 0.5
+      resistance: Math.random() * 0.5 + 0.5 // Random resistance between 0.5 and 1.0
     }]);
     setFishIdCounter(fishIdCounter + 1);
   };
@@ -246,16 +128,6 @@ export const AgentScene = ({ onCountsChange }: { onCountsChange?: (counts: { hya
     );
   };
 
-  // Handle hyacinth death
-  const handleHyacinthDeath = (id: number) => {
-    setHyacinths(currentHyacinths => currentHyacinths.filter(h => h.id !== id));
-  };
-
-  // Handle fish death
-  const handleFishDeath = (id: number) => {
-    setFish(currentFish => currentFish.filter(f => f.id !== id));
-  };
-
   // Make these functions available to the parent
   useEffect(() => {
     if (window) {
@@ -270,23 +142,18 @@ export const AgentScene = ({ onCountsChange }: { onCountsChange?: (counts: { hya
 
   return (
     <>
-      {fish.map(fish => (
-        <FishSprite 
-          key={fish.id} 
-          fish={fish} 
-          onPositionChange={handleFishPositionChange}
-          removeFish={() => handleFishDeath(fish.id)}
-        />
-      ))}
       {hyacinths.map(hyacinth => (
         <HyacinthSprite 
           key={hyacinth.id} 
           hyacinth={hyacinth} 
           onPositionChange={handleHyacinthPositionChange}
-          onGrowth={handleHyacinthGrowth}
-          onReproduction={handleHyacinthReproduction}
-          allHyacinths={hyacinths}
-          onDeath={handleHyacinthDeath}
+        />
+      ))}
+      {fish.map(fish => (
+        <FishSprite 
+          key={fish.id} 
+          fish={fish} 
+          onPositionChange={handleFishPositionChange}
         />
       ))}
     </>
