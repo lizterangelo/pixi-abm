@@ -1,6 +1,6 @@
 export interface River {
   flowDirection: number; // in radians (0 = right, PI/2 = down, PI = left, 3PI/2 = up)
-  flowRate: number;     // pixels per second
+  flowRate: number; // pixels per second
   totalNutrients: number; // total nutrients in kg
   temperature: number; // temperature in °C (25-35°C)
   sunlight: number; // sunlight scale (0.0-1.0)
@@ -21,8 +21,8 @@ export const createRiver = (): River => {
       temperature: 30, // Default temperature 30°C
       sunlight: 0.8, // Default sunlight 0.8 (80%)
       pollutionLevel: 20, // Default pollution level 20% (within 0-100 range)
-      initialDissolvedOxygen: 6.00,
-      currentDissolvedOxygen: 6.00,
+      initialDissolvedOxygen: 6.0,
+      currentDissolvedOxygen: 6.0,
     };
   }
   return riverInstance;
@@ -51,14 +51,17 @@ export const resetRiver = (): River => {
     temperature: 30, // Reset temperature
     sunlight: 0.8, // Reset sunlight
     pollutionLevel: 20, // Reset pollution level to 20%
-    initialDissolvedOxygen: 6.00,
-    currentDissolvedOxygen: 6.00,
+    initialDissolvedOxygen: 6.0,
+    currentDissolvedOxygen: 6.0,
   };
   return riverInstance;
 };
 
 // River controls functionality
-export const createRiverControls = (river: River, setRiver: (river: River) => void) => {
+export const createRiverControls = (
+  river: River,
+  setRiver: (river: River) => void,
+) => {
   const handleFlowDirectionChange = (direction: number) => {
     const updatedRiver = updateRiver({ flowDirection: direction });
     setRiver(updatedRiver);
@@ -95,6 +98,6 @@ export const createRiverControls = (river: River, setRiver: (river: River) => vo
     handleNutrientsChange,
     handleTemperatureChange,
     handleSunlightChange,
-    handlePollutionChange
+    handlePollutionChange,
   };
-}; 
+};

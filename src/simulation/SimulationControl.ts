@@ -8,7 +8,7 @@ interface SimulationState {
   dayCount: number; // Tracks number of days passed (1 second = 1 day)
 }
 
-let simulationState: SimulationState = {
+const simulationState: SimulationState = {
   isPlaying: false,
   isPaused: true,
   globalTime: 0,
@@ -91,10 +91,10 @@ export const isSimulationRunning = (): boolean => {
 export const addStateChangeListener = (listener: () => void) => {
   stateChangeListeners.push(listener);
   return () => {
-    stateChangeListeners = stateChangeListeners.filter(l => l !== listener);
+    stateChangeListeners = stateChangeListeners.filter((l) => l !== listener);
   };
 };
 
 const notifyListeners = () => {
-  stateChangeListeners.forEach(listener => listener());
-}; 
+  stateChangeListeners.forEach((listener) => listener());
+};
