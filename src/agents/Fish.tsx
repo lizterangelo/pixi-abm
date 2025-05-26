@@ -8,6 +8,7 @@ import { isSimulationRunning, getSpeedMultiplier } from "../simulation/Simulatio
 
 export interface Fish {
   id: string;
+  reproduceRate: number;
   x: number;
   y: number;
   rotationSpeed: number;
@@ -26,15 +27,17 @@ interface FishSpriteProps {
   river: River;
   onPositionChange: (id: string, x: number, y: number) => void;
   onTouchingHyacinthChange: (id: string, touching: boolean) => void;
+  onReproduction: (parentId: string, x: number, y: number) => void;
 }
 
-export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouchingHyacinthChange }: FishSpriteProps) => {
+export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouchingHyacinthChange, onReproduction }: FishSpriteProps) => {
   const spriteRef = useRef<Sprite>(null);
   const [texture, setTexture] = useState(Texture.EMPTY);
   const [spriteSize, setSpriteSize] = useState({ width: 0, height: 0 });
   const [fishState, setFishState] = useState<Fish>({...fish, vx: 0, vy: 0, movementTimer: 0});
   const { app } = useApplication();
   const floatingTimeRef = useRef<number>(0); // For floating animation
+  const lastReproductionCheckRef = useRef<number>(0); // For reproduction timing
 
   // Sync local state with props when fish position changes from parent
   useEffect(() => {
@@ -44,9 +47,10 @@ export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouc
       y: fish.y,
       id: fish.id,
       resistance: fish.resistance,
+      reproduceRate: fish.reproduceRate,
       touchingHyacinth: fish.touchingHyacinth
     }));
-  }, [fish.x, fish.y, fish.id, fish.resistance, fish.touchingHyacinth]);
+  }, [fish.x, fish.y, fish.id, fish.resistance, fish.reproduceRate, fish.touchingHyacinth]);
 
   // Preload the sprite if it hasn't been loaded yet
   useEffect(() => {
@@ -82,6 +86,23 @@ export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouc
     
     // Update floating animation time
     floatingTimeRef.current += deltaTime * 0.03; // Slightly faster floating for fish
+    
+    // Handle reproduction check every second
+    lastReproductionCheckRef.current += deltaTime / 60; // Convert to seconds
+    
+    if (lastReproductionCheckRef.current >= 1.0) {
+      // Check for reproduction based on reproduceRate (0-1 = 0%-100% chance per second)
+      const reproductionChance = fish.reproduceRate; // 0 to 1
+      const randomValue = Math.random(); // 0 to 1
+      
+      if (randomValue < reproductionChance) {
+        // Reproduce! Spawn new fish at parent's location
+        console.log(`Fish ${fish.id} reproducing! (Rate: ${fish.reproduceRate.toFixed(2)}, Roll: ${randomValue.toFixed(3)})`);
+        onReproduction(fish.id, fishState.x, fishState.y);
+      }
+      
+      lastReproductionCheckRef.current = 0;
+    }
     
     // Update movement timer and potentially change direction
     let updatedFish = { ...fishState };

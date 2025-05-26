@@ -130,8 +130,8 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
     // Add the hyacinth
     if (foundValidPosition) {
       const nur = 0.01 + Math.random() * 0.04; // Generate NUR once
-      const pol = 0.1 + Math.random() * 0.4; // Generate POL (0.1-0.5% per second)
-      const growthRate = calculateGrowthRate(river.temperature, river.sunlight, nur); // Calculate growth rate
+      const pol = 0.05 + Math.random() * 0.04; // Generate POL (0.05-0.09% per second)
+      const growthRate = calculateGrowthRate(river.temperature, river.sunlight, nur);
       const dissolvedOxygenImpact = 0.03 + Math.random() * 0.03; // Random DO impact 0.03-0.06
       
       setHyacinths([...hyacinths, { 
@@ -185,7 +185,8 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
     // Add the fish
     if (foundValidPosition) {
       setFish([...fish, { 
-        id: uuidv4(), 
+        id: uuidv4(),
+        reproduceRate: 0.5, // Default reproduce rate
         x: x!, 
         y: y!,
         rotationSpeed: 0.1,
@@ -245,7 +246,7 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
       }
       
       const nur = 0.01 + Math.random() * 0.04;
-      const pol = 0.1 + Math.random() * 0.4;
+      const pol = 0.05 + Math.random() * 0.04;
       const growthRate = calculateGrowthRate(river.temperature, river.sunlight, nur);
       const dissolvedOxygenImpact = 0.03 + Math.random() * 0.03; // Random DO impact 0.03-0.06
       
@@ -272,7 +273,7 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
   };
 
   // Function to setup multiple fish
-  const setupFish = (count: number) => {
+  const setupFish = (count: number, reproduceRate: number = 0.5) => {
     if (!app || count <= 0) return;
     
     const newFish: Fish[] = [];
@@ -316,6 +317,7 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
       
       newFish.push({
         id: uuidv4(),
+        reproduceRate: reproduceRate, // Use the provided reproduce rate
         x: x,
         y: y,
         rotationSpeed: 0.1,
@@ -324,6 +326,13 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
     }
     
     setFish([...fish, ...newFish]);
+  };
+
+  // Function to update reproduce rate for all fish
+  const updateAllFishReproduceRate = (newReproduceRate: number) => {
+    setFish(currentFish => 
+      currentFish.map(fish => ({ ...fish, reproduceRate: newReproduceRate }))
+    );
   };
 
   // Handle hyacinth position updates
@@ -366,7 +375,7 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
       if (!parent) return currentHyacinths;
 
       const nur = 0.01 + Math.random() * 0.04; // Generate NUR for daughter
-      const pol = 0.1 + Math.random() * 0.4; // Generate POL (0.1-0.5% per second)
+      const pol = 0.05 + Math.random() * 0.04; // Generate POL (0.05-0.09% per second) for daughter
       const growthRate = calculateGrowthRate(river.temperature, river.sunlight, nur);
       const dissolvedOxygenImpact = 0.03 + Math.random() * 0.03; // Random DO impact 0.03-0.06 for daughter
       
@@ -423,6 +432,26 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
     );
   };
 
+  // Handle fish reproduction
+  const handleFishReproduction = (parentId: string, x: number, y: number) => {
+    const parent = fish.find(f => f.id === parentId);
+    if (!parent) return;
+
+    // Create new fish at parent's location with same properties
+    const newFish: Fish = {
+      id: uuidv4(),
+      reproduceRate: parent.reproduceRate, // Inherit reproduce rate from parent
+      x: x,
+      y: y,
+      rotationSpeed: 0.1,
+      resistance: parent.resistance, // Inherit resistance from parent
+    };
+
+    console.log(`Fish ${parentId} reproduced! New fish ${newFish.id} created at (${x.toFixed(1)}, ${y.toFixed(1)})`);
+    
+    setFish(currentFish => [...currentFish, newFish]);
+  };
+
   // Make these functions available to the parent
   useEffect(() => {
     if (window) {
@@ -436,6 +465,8 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
       window.setupHyacinths = setupHyacinths;
       // @ts-ignore
       window.setupFish = setupFish;
+      // @ts-ignore
+      window.updateAllFishReproduceRate = updateAllFishReproduceRate;
     }
   }, [app, hyacinths, fish]);
 
@@ -466,6 +497,7 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
           river={river}
           onPositionChange={handleFishPositionChange}
           onTouchingHyacinthChange={handleFishTouchingHyacinthChange}
+          onReproduction={handleFishReproduction}
         />
       ))}
     </>

@@ -199,6 +199,7 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
 const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
   const [hyacinthCount, setHyacinthCount] = useState(5);
   const [fishCount, setFishCount] = useState(3);
+  const [fishReproduceRate, setFishReproduceRate] = useState(0.5);
   const [simulationState, setSimulationState] = useState(getSimulationState());
   const [speedMultiplier, setSpeedMultiplierState] = useState(getSpeedMultiplier());
 
@@ -214,12 +215,19 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
     // Reset agents first
     // @ts-ignore
     if (window.resetAgents) window.resetAgents();
-    
+
     // Setup hyacinths and fish using batch functions
     // @ts-ignore
     if (window.setupHyacinths) window.setupHyacinths(hyacinthCount);
     // @ts-ignore
-    if (window.setupFish) window.setupFish(fishCount);
+    if (window.setupFish) window.setupFish(fishCount, fishReproduceRate);
+  };
+
+  const handleFishReproduceRateChange = (newRate: number) => {
+    setFishReproduceRate(newRate);
+    // Update all existing fish reproduce rates
+    // @ts-ignore
+    if (window.updateAllFishReproduceRate) window.updateAllFishReproduceRate(newRate);
   };
 
   const handleTogglePlayPause = () => {
@@ -227,13 +235,29 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
   };
 
   const handleReset = () => {
-    resetSimulation();
+    resetSimulation(); // Resets simulation state (time, ticks, days, play/pause)
     
-    // Reset agents
+    // Reset agents (clears hyacinth and fish arrays via window.resetAgents)
     // @ts-ignore
     if (window.resetAgents) window.resetAgents();
     
-    // Don't reset river settings - keep current user configurations
+    // Explicitly set desired river parameters after general reset
+    const specificRiverSettings = updateRiver({
+      pollutionLevel: 100, // Override: Set pollution to 100%
+      totalNutrients: 500,   // Override: Set nutrients to 500 kg
+      // Other river parameters will retain values from a full resetRiver() if we were to call it,
+      // or retain current values if we don't call a full resetRiver().
+      // For safety and to ensure other defaults are also set (like DO, flow rate etc. from resetRiver):
+      // Call resetRiver() first, then override specific values.
+    });
+    // To ensure all other default values from resetRiver() are applied first:
+    let riverStateAfterFullReset = resetRiver();
+    riverStateAfterFullReset = updateRiver({
+      ...riverStateAfterFullReset, // Start with all defaults from resetRiver
+      pollutionLevel: 100,       // Then override pollution
+      totalNutrients: 500,       // Then override nutrients
+    });
+    setRiver(riverStateAfterFullReset);
   };
 
   const handleSpeedChange = (value: number) => {
@@ -295,7 +319,7 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
         />
         <span style={{ color: "black", fontSize: "10px" }}> {hyacinthCount}</span>
       </div>
-      <div style={{ marginBottom: "8px" }}>
+      <div style={{ marginBottom: "6px" }}>
         <label style={{ color: "black", fontSize: "11px" }}>Fish: </label>
         <input 
           type="range" 
@@ -307,6 +331,19 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
           style={{ width: "80px" }}
         />
         <span style={{ color: "black", fontSize: "10px" }}> {fishCount}</span>
+      </div>
+      <div style={{ marginBottom: "8px" }}>
+        <label style={{ color: "black", fontSize: "11px" }}>Fish Reproduce Rate: </label>
+        <input 
+          type="range" 
+          min="0" 
+          max="2" 
+          step="0.1" 
+          value={fishReproduceRate} 
+          onChange={(e) => handleFishReproduceRateChange(parseFloat(e.target.value))}
+          style={{ width: "80px" }}
+        />
+        <span style={{ color: "black", fontSize: "10px" }}> {fishReproduceRate.toFixed(1)}</span>
       </div>
       <button 
         onClick={handleSetup} 
@@ -425,18 +462,18 @@ const AppContent = () => {
           position: "relative"
         }}
       >
-        <Application 
-          background={"#1099bb"} 
-          resizeTo={containerRef}
-          autoDensity={true}
-        >
+          <Application 
+            background={"#1099bb"} 
+            resizeTo={containerRef}
+            autoDensity={true}
+          >
           <AgentScene 
             river={river} 
             onNutrientConsumption={handleNutrientConsumption} 
             onPollutionConsumption={handlePollutionConsumption}
             onCurrentDOChange={handleCurrentDOChange}
           />
-        </Application>
+          </Application>
       </div>
     </div>
   );
@@ -444,7 +481,7 @@ const AppContent = () => {
 
 export default function App() {
   return (
-    <AppContent />
+      <AppContent />
   );
 }
 
