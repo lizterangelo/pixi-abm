@@ -15,19 +15,34 @@ export interface Fish {
   targetX?: number; // Target X position
   targetY?: number; // Target Y position
   movementTimer?: number; // Timer for movement changes
+  health?: number; // Fish health (0-1)
+  oxygenRequirement?: number; // mg/L, species-specific
 }
 
 interface FishSpriteProps {
   fish: Fish;
   onPositionChange: (id: number, x: number, y: number) => void;
+  removeFish: () => void;
 }
 
-export const FishSprite = ({ fish, onPositionChange }: FishSpriteProps) => {
+// Shelter Gaussian parameters
+const OPTIMAL_MAT_DENSITY = 1.0; // kg/cell
+const SHELTER_VARIANCE = 0.3; // controls width of benefit curve
+const SHELTER_MAX = 1.0;
+
+export const FishSprite = ({ fish, onPositionChange, removeFish }: FishSpriteProps) => {
   const spriteRef = useRef<Sprite>(null);
   const [texture, setTexture] = useState(Texture.EMPTY);
   const { river } = useEnvironment();
   const [spriteSize, setSpriteSize] = useState({ width: 0, height: 0 });
-  const [fishState, setFishState] = useState<Fish>({...fish, vx: 0, vy: 0, movementTimer: 0});
+  const [fishState, setFishState] = useState<Fish>({
+    ...fish,
+    vx: 0,
+    vy: 0,
+    movementTimer: 0,
+    health: fish.health ?? 1.0,
+    oxygenRequirement: fish.oxygenRequirement ?? 4.0,
+  });
   const { app } = useApplication();
 
   // Preload the sprite if it hasn't been loaded yet
@@ -43,6 +58,35 @@ export const FishSprite = ({ fish, onPositionChange }: FishSpriteProps) => {
       });
     }
   }, [texture]);
+
+  // Helper: get local mat density
+  const getLocalMatDensity = (x: number, y: number) => {
+    if (typeof window !== 'undefined' && window.getMatDensity) {
+      return window.getMatDensity(x, y);
+    }
+    return 0;
+  };
+
+  // Helper: get local oxygen (reduced by mat density)
+  const getLocalOxygen = (x: number, y: number) => {
+    const matDensity = getLocalMatDensity(x, y);
+    // Each kg of mat reduces DO by 1 mg/L (tunable)
+    return Math.max(0, (river.dissolvedOxygen || 8.0) - matDensity * 1.0);
+  };
+
+  // Helper: calculate shelter value (Gaussian curve)
+  const getShelterValue = (matDensity: number) => {
+    return SHELTER_MAX * Math.exp(-((matDensity - OPTIMAL_MAT_DENSITY) ** 2) / (2 * SHELTER_VARIANCE));
+  };
+
+  // Helper: calculate utility score for movement
+  const getUtility = (x: number, y: number) => {
+    const localDO = getLocalOxygen(x, y);
+    const matDensity = getLocalMatDensity(x, y);
+    const shelter = getShelterValue(matDensity);
+    // Weight oxygen and shelter equally (tunable)
+    return localDO + shelter;
+  };
 
   // Get a new random target within the screen bounds
   const getNewTarget = () => {
@@ -63,17 +107,67 @@ export const FishSprite = ({ fish, onPositionChange }: FishSpriteProps) => {
     
     const deltaTime = ticker.deltaTime;
     
-    // Update movement timer and potentially change direction
     let updatedFish = { ...fishState };
     updatedFish.movementTimer = (fishState.movementTimer || 0) - deltaTime;
 
-    // Choose a new target when the timer expires or we're close to the current target
-    if ((updatedFish.movementTimer || 0) <= 0 || 
-        (!updatedFish.targetX && !updatedFish.targetY)) {
-      const { x, y } = getNewTarget();
-      updatedFish.targetX = x;
-      updatedFish.targetY = y;
-      updatedFish.movementTimer = Math.random() * 300 + 200; // Random time between 200-500 frames
+    // --- FISH DEATH CONDITIONS ---
+    const localDO = getLocalOxygen(fish.x, fish.y);
+    const OR = fishState.oxygenRequirement ?? 4.0;
+    const PL = river.pollutionLevel || 0.0;
+    const TEMP = river.temperature || 30.0;
+    // Health update: decrease if DO < OR or PL high, recover if good
+    let health = fishState.health ?? 1.0;
+    if (localDO < OR) health -= 0.01 * (OR - localDO) * deltaTime * 0.1;
+    if (PL >= 2.5) health -= 0.01 * (PL - 2.5) * deltaTime * 0.1;
+    if (localDO >= OR && PL < 2.5) health += 0.005 * deltaTime * 0.1;
+    health = Math.max(0, Math.min(1, health));
+    updatedFish.health = health;
+    // Oxygen deprivation
+    if (localDO < OR) {
+      if (health <= 0.01) { removeFish && removeFish(); return; }
+    }
+    // Pollution toxicity
+    if (PL >= 5.0) {
+      removeFish && removeFish();
+      return;
+    }
+    // Temperature stress
+    if (TEMP < 25.0 || TEMP > 35.0) {
+      removeFish && removeFish();
+      return;
+    }
+    // Poor health
+    if (health <= 0.01) {
+      removeFish && removeFish();
+      return;
+    }
+    // --- END FISH DEATH CONDITIONS ---
+
+    // Utility-based movement decision (use local DO and shelter)
+    const currentUtility = getUtility(fish.x, fish.y);
+    const directions = [
+      { dx: 0, dy: 0 },
+      { dx: 30, dy: 0 },
+      { dx: -30, dy: 0 },
+      { dx: 0, dy: 30 },
+      { dx: 0, dy: -30 },
+      { dx: 21, dy: 21 },
+      { dx: -21, dy: 21 },
+      { dx: 21, dy: -21 },
+      { dx: -21, dy: -21 },
+    ];
+    let best = { utility: currentUtility, x: fish.x, y: fish.y };
+    for (const dir of directions) {
+      const nx = Math.max(0, Math.min(app.screen.width, fish.x + dir.dx));
+      const ny = Math.max(0, Math.min(app.screen.height, fish.y + dir.dy));
+      const util = getUtility(nx, ny);
+      if (util > best.utility) {
+        best = { utility: util, x: nx, y: ny };
+      }
+    }
+    if (best.utility > currentUtility + 0.1) {
+      updatedFish.targetX = best.x;
+      updatedFish.targetY = best.y;
     }
     
     // Calculate direction vector to target
@@ -114,8 +208,8 @@ export const FishSprite = ({ fish, onPositionChange }: FishSpriteProps) => {
     }
     
     // Calculate river flow effect
-    const riverFlowX = Math.cos(river.flowDirection) * river.flowRate * deltaTime * 0.05;
-    const riverFlowY = Math.sin(river.flowDirection) * river.flowRate * deltaTime * 0.05;
+    const riverFlowX = Math.cos(river.flowDirection) * river.baseFlowRate * deltaTime * 0.05;
+    const riverFlowY = Math.sin(river.flowDirection) * river.baseFlowRate * deltaTime * 0.05;
     
     // Calculate new position with fish movement and river flow
     let newX = fish.x + (updatedFish.vx || 0) + riverFlowX * (1 - fish.resistance);
