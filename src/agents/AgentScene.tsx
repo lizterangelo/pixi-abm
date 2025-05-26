@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { Hyacinth, HyacinthSprite, HYACINTH_SIZE, INIT_BIOMASS, MAX_BIOMASS } from "./Hyacinth";
 import { Fish, FishSprite } from "./Fish";
 import { River } from "../environment/River";
+import { SimulationManager } from "../simulation/SimulationManager";
 import { isSimulationRunning } from "../simulation/SimulationControl";
 
 // Calculate growth rate based on environmental factors
