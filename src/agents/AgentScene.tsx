@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { Hyacinth, HyacinthSprite, HYACINTH_SIZE, INIT_BIOMASS, MAX_BIOMASS } from "./Hyacinth";
 import { Fish, FishSprite } from "./Fish";
 import { River } from "../environment/River";
-import { useTick } from "@pixi/react";
+import { isSimulationRunning } from "../simulation/SimulationControl";
 
 // Calculate growth rate based on environmental factors
 const calculateGrowthRate = (temperature: number, sunlight: number, nur: number): number => {
@@ -32,48 +32,48 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
   const [fish, setFish] = useState<Fish[]>([]);
   const [hyacinthIdCounter, setHyacinthIdCounter] = useState(0);
   const [fishIdCounter, setFishIdCounter] = useState(0);
-  const lastNutrientUpdateRef = useRef<number>(0);
 
-  // Handle nutrient consumption by hyacinths using useTick for accuracy
-  useTick((ticker) => {
-    // Accumulate time in seconds
-    lastNutrientUpdateRef.current += ticker.deltaTime / 60; // deltaTime is in frames, convert to seconds (assuming 60 FPS)
-    
-    // Check if a full second has passed
-    if (lastNutrientUpdateRef.current >= 1.0) {
-      if (hyacinths.length > 0 && river.totalNutrients > 0) {
-        // Calculate total NUR from all hyacinths
-        const totalNUR = hyacinths.reduce((sum, hyacinth) => sum + hyacinth.nur, 0);
-        
-        // Use NUR as raw consumption rate per second (kg/second)
-        const consumptionPerSecond = totalNUR;
-        
-        // console.log(`Total Nutrients: ${river.totalNutrients.toFixed(2)} kg | Consuming: ${consumptionPerSecond.toFixed(4)} kg/s | Hyacinths: ${hyacinths.length}`);
-        
-        // Consume nutrients every second
-        if (consumptionPerSecond > 0) {
-          onNutrientConsumption(consumptionPerSecond);
-        }
-      }
+  // Handle nutrient and pollution consumption
+  const handleNutrientUpdate = () => {
+    if (hyacinths.length > 0 && river.totalNutrients > 0) {
+      // Calculate total NUR from all hyacinths
+      const totalNUR = hyacinths.reduce((sum, hyacinth) => sum + hyacinth.nur, 0);
       
-      // Handle pollution consumption (hyacinths absorb pollution even if there's little left)
-      if (hyacinths.length > 0 && river.pollutionLevel > 0) {
-        // Calculate total POL from all hyacinths
-        const totalPOL = hyacinths.reduce((sum, hyacinth) => sum + hyacinth.pol, 0);
-        
-        // Use POL as percentage reduction per second
-        const pollutionReductionPerSecond = totalPOL;
-        
-        // Consume pollution every second
-        if (pollutionReductionPerSecond > 0) {
-          onPollutionConsumption(pollutionReductionPerSecond);
-        }
-      }
+      // Use NUR as raw consumption rate per second (kg/second)
+      const consumptionPerSecond = totalNUR;
       
-      // Reset the timer
-      lastNutrientUpdateRef.current = 0;
+      // Consume nutrients every second
+      if (consumptionPerSecond > 0) {
+        onNutrientConsumption(consumptionPerSecond);
+      }
     }
-  });
+    
+    // Handle pollution consumption (hyacinths absorb pollution even if there's little left)
+    if (hyacinths.length > 0 && river.pollutionLevel > 0) {
+      // Calculate total POL from all hyacinths
+      const totalPOL = hyacinths.reduce((sum, hyacinth) => sum + hyacinth.pol, 0);
+      
+      // Use POL as percentage reduction per second
+      const pollutionReductionPerSecond = totalPOL;
+      
+      // Consume pollution every second
+      if (pollutionReductionPerSecond > 0) {
+        onPollutionConsumption(pollutionReductionPerSecond);
+      }
+    }
+  };
+
+  // Handle hyacinth updates
+  const handleHyacinthUpdate = (deltaTime: number) => {
+    // This will be handled by individual hyacinth components
+    // We just need to pass the deltaTime to them
+  };
+
+  // Handle fish updates  
+  const handleFishUpdate = (deltaTime: number) => {
+    // This will be handled by individual fish components
+    // We just need to pass the deltaTime to them
+  };
 
   // Check if a position overlaps with existing hyacinths
   const checkOverlap = (x: number, y: number, minDistance: number): boolean => {
@@ -285,6 +285,11 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
 
   return (
     <>
+      <SimulationManager 
+        onNutrientUpdate={handleNutrientUpdate}
+        onHyacinthUpdate={handleHyacinthUpdate}
+        onFishUpdate={handleFishUpdate}
+      />
       {hyacinths.map(hyacinth => (
         <HyacinthSprite 
           key={hyacinth.id} 

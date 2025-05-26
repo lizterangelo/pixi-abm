@@ -3,6 +3,7 @@ import { Container, Sprite } from "pixi.js";
 import { AgentScene } from "./agents/AgentScene";
 import { River, createRiver, createRiverControls, updateRiver, resetRiver, getRiver } from "./environment/River";
 import { useRef, useEffect, useState } from "react";
+import { playSimulation, pauseSimulation, resetSimulation, getSimulationState, addStateChangeListener } from "./simulation/SimulationControl";
 
 // extend tells @pixi/react what Pixi.js components are available
 extend({
@@ -143,18 +144,28 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
   );
 };
 
-const AgentControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
-  const handleAddHyacinth = () => {
-    // @ts-ignore
-    if (window.addHyacinth) window.addHyacinth();
+const SimulationControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
+  const [simulationState, setSimulationState] = useState(getSimulationState());
+
+  useEffect(() => {
+    const unsubscribe = addStateChangeListener(() => {
+      setSimulationState(getSimulationState());
+    });
+    return unsubscribe;
+  }, []);
+
+  const handlePlay = () => {
+    playSimulation();
   };
 
-  const handleAddFish = () => {
-    // @ts-ignore
-    if (window.addFish) window.addFish();
+  const handlePause = () => {
+    pauseSimulation();
   };
 
   const handleReset = () => {
+    resetSimulation();
+    
+    // Reset agents
     // @ts-ignore
     if (window.resetAgents) window.resetAgents();
     
@@ -173,9 +184,54 @@ const AgentControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
       border: "1px solid #ccc",
       boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
     }}>
+      <button 
+        onClick={handlePlay} 
+        disabled={simulationState.isPlaying && !simulationState.isPaused}
+        style={{...buttonStyle, backgroundColor: simulationState.isPlaying && !simulationState.isPaused ? "#ccc" : "#4CAF50"}}
+      >
+        ▶️ Play
+      </button>
+      <button 
+        onClick={handlePause} 
+        disabled={!simulationState.isPlaying || simulationState.isPaused}
+        style={{...buttonStyle, backgroundColor: !simulationState.isPlaying || simulationState.isPaused ? "#ccc" : "#FF9800"}}
+      >
+        ⏸️ Pause
+      </button>
+      <button 
+        onClick={handleReset} 
+        style={{...buttonStyle, backgroundColor: "#f44336"}}
+      >
+        🔄 Reset
+      </button>
+    </div>
+  );
+};
+
+const AgentControls = () => {
+  const handleAddHyacinth = () => {
+    // @ts-ignore
+    if (window.addHyacinth) window.addHyacinth();
+  };
+
+  const handleAddFish = () => {
+    // @ts-ignore
+    if (window.addFish) window.addFish();
+  };
+
+  return (
+    <div style={{ 
+      backgroundColor: "rgba(255, 255, 255, 0.8)",
+      padding: "10px",
+      borderRadius: "5px",
+      display: "flex",
+      gap: 10,
+      border: "1px solid #ccc",
+      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+      marginBottom: "10px"
+    }}>
       <button onClick={handleAddHyacinth} style={buttonStyle}>Add Water Hyacinth</button>
       <button onClick={handleAddFish} style={buttonStyle}>Add Fish</button>
-      <button onClick={handleReset} style={buttonStyle}>Reset</button>
     </div>
   );
 };
@@ -229,7 +285,8 @@ const AppContent = () => {
         pointerEvents: "none"
       }}>
         <div style={{ pointerEvents: "auto" }}>
-          <AgentControls setRiver={setRiver} />
+          <AgentControls />
+          <SimulationControls setRiver={setRiver} />
         </div>
         <div style={{ pointerEvents: "auto" }}>
           <RiverControls river={river} setRiver={setRiver} />

@@ -4,6 +4,7 @@ import { useTick } from "@pixi/react";
 import { useApplication } from "@pixi/react";
 import { River } from "../environment/River";
 import { Hyacinth } from "./Hyacinth";
+import { isSimulationRunning } from "../simulation/SimulationControl";
 
 export interface Fish {
   id: number;
@@ -64,7 +65,7 @@ export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouc
 
   // Listen for animate update
   useTick((ticker) => {
-    if (!spriteRef.current || !app) return;
+    if (!spriteRef.current || !app || !isSimulationRunning()) return;
     
     const deltaTime = ticker.deltaTime;
     

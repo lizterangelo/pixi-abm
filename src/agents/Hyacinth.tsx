@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTick } from "@pixi/react";
 import { useApplication } from "@pixi/react";
 import { River } from "../environment/River";
+import { isSimulationRunning } from "../simulation/SimulationControl";
 
 // Biomass constants
 export const INIT_BIOMASS = 0.5;
@@ -135,7 +136,7 @@ export const HyacinthSprite = ({ hyacinth, allHyacinths, river, onPositionChange
 
   // Listen for animate update
   useTick((ticker) => {
-    if (!spriteRef.current || !app) return;
+    if (!spriteRef.current || !app || !isSimulationRunning()) return;
     
     // Update floating animation time
     floatingTimeRef.current += ticker.deltaTime * 0.02; // Slow floating speed
