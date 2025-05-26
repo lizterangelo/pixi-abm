@@ -791,7 +791,7 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
     // Set optimal parameters in the controls only
     setHyacinthCount(5);
     setHyacinthReproduceRate(5);
-    setFishCount(10);
+    setFishCount(15);
     setFishReproduceRate(6);
 
     // Update river settings to optimal values
@@ -801,7 +801,7 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
       totalNutrients: 500,
       temperature: 30,
       sunlight: 0.8,
-      pollutionLevel: 27,
+      pollutionLevel: 33,
     });
     setRiver(optimalRiver);
 
