@@ -5,6 +5,8 @@ export interface River {
   temperature: number; // temperature in °C (25-35°C)
   sunlight: number; // sunlight scale (0.0-1.0)
   pollutionLevel: number; // pollution level as percentage (0-100%)
+  initialDissolvedOxygen: number; // mg/L, e.g., at saturation without plants
+  currentDissolvedOxygen: number; // mg/L, current level affected by plants
 }
 
 // Singleton river instance
@@ -18,7 +20,9 @@ export const createRiver = (): River => {
       totalNutrients: 100.0, // Starting with 100 kg of nutrients
       temperature: 30, // Default temperature 30°C
       sunlight: 0.8, // Default sunlight 0.8 (80%)
-      pollutionLevel: 500 // Default pollution level 500%
+      pollutionLevel: 20, // Default pollution level 20% (within 0-100 range)
+      initialDissolvedOxygen: 6.00,
+      currentDissolvedOxygen: 6.00,
     };
   }
   return riverInstance;
@@ -46,7 +50,9 @@ export const resetRiver = (): River => {
     totalNutrients: 100.0, // Reset to starting nutrients
     temperature: 30, // Reset temperature
     sunlight: 0.8, // Reset sunlight
-    pollutionLevel: 500 // Reset pollution level to 500%
+    pollutionLevel: 20, // Reset pollution level to 20%
+    initialDissolvedOxygen: 6.00,
+    currentDissolvedOxygen: 6.00,
   };
   return riverInstance;
 };

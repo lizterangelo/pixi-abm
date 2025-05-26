@@ -7,14 +7,28 @@ import { SimulationManager } from "../simulation/SimulationManager";
 import { isSimulationRunning } from "../simulation/SimulationControl";
 import { v4 as uuidv4 } from 'uuid';
 
-export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumption }: { 
+export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumption, onCurrentDOChange }: { 
   river: River, 
   onNutrientConsumption: (consumedAmount: number) => void,
-  onPollutionConsumption: (consumedAmount: number) => void 
+  onPollutionConsumption: (consumedAmount: number) => void,
+  onCurrentDOChange: (newDO: number) => void; 
 }) => {
   const { app } = useApplication();
   const [hyacinths, setHyacinths] = useState<Hyacinth[]>([]);
   const [fish, setFish] = useState<Fish[]>([]);
+
+  // Effect to update currentDissolvedOxygen based on hyacinth count and pollution
+  useEffect(() => {
+    const totalHyacinthOxygenImpact = hyacinths.reduce((sum, hyacinth) => sum + hyacinth.dissolvedOxygenImpact, 0);
+    const pollutionDOImpact = (river.pollutionLevel / 100) * 6.0; // 100% pollution = -6.0 DO
+    
+    // Ensure pollutionDOImpact doesn't exceed initialDissolvedOxygen on its own if initialDO is less than 6
+    // Or, more simply, ensure the subtracted value is capped.
+    // The Math.max(0, ...) below will handle the final floor.
+
+    const newCurrentDO = Math.max(0, river.initialDissolvedOxygen - totalHyacinthOxygenImpact - pollutionDOImpact);
+    onCurrentDOChange(newCurrentDO);
+  }, [hyacinths, river.initialDissolvedOxygen, river.pollutionLevel, onCurrentDOChange]); // Added river.pollutionLevel to dependencies
 
   // Handle nutrient and pollution consumption
   const handleNutrientUpdate = () => {
@@ -118,6 +132,7 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
       const nur = 0.01 + Math.random() * 0.04; // Generate NUR once
       const pol = 0.1 + Math.random() * 0.4; // Generate POL (0.1-0.5% per second)
       const growthRate = calculateGrowthRate(river.temperature, river.sunlight, nur); // Calculate growth rate
+      const dissolvedOxygenImpact = 0.03 + Math.random() * 0.03; // Random DO impact 0.03-0.06
       
       setHyacinths([...hyacinths, { 
         id: uuidv4(), 
@@ -133,7 +148,8 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
         daughters: [], // Start with no daughters
         currentDaughters: 0, // No daughters produced yet
         futureDaughters: Math.floor(Math.random() * 3) + 1, // Random 1-3 future daughters
-        biomassGained: 0 // Start with no biomass gained
+        biomassGained: 0, // Start with no biomass gained
+        dissolvedOxygenImpact: dissolvedOxygenImpact, // Set DO impact
       }]);
     }
   };
@@ -231,6 +247,7 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
       const nur = 0.01 + Math.random() * 0.04;
       const pol = 0.1 + Math.random() * 0.4;
       const growthRate = calculateGrowthRate(river.temperature, river.sunlight, nur);
+      const dissolvedOxygenImpact = 0.03 + Math.random() * 0.03; // Random DO impact 0.03-0.06
       
       newHyacinths.push({
         id: uuidv4(),
@@ -246,11 +263,12 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
         daughters: [],
         currentDaughters: 0,
         futureDaughters: Math.floor(Math.random() * 3) + 1,
-        biomassGained: 0
+        biomassGained: 0,
+        dissolvedOxygenImpact: dissolvedOxygenImpact, // Set DO impact
       });
     }
     
-    setHyacinths([...hyacinths, ...newHyacinths]);
+    setHyacinths(prevHyacinths => [...prevHyacinths, ...newHyacinths]);
   };
 
   // Function to setup multiple fish
@@ -350,6 +368,7 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
       const nur = 0.01 + Math.random() * 0.04; // Generate NUR for daughter
       const pol = 0.1 + Math.random() * 0.4; // Generate POL (0.1-0.5% per second)
       const growthRate = calculateGrowthRate(river.temperature, river.sunlight, nur);
+      const dissolvedOxygenImpact = 0.03 + Math.random() * 0.03; // Random DO impact 0.03-0.06 for daughter
       
       const daughter: Hyacinth = {
         id: uuidv4(),
@@ -365,7 +384,8 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
         daughters: [],
         currentDaughters: 0,
         futureDaughters: Math.floor(Math.random() * 3) + 1, // Random 1-3 future daughters
-        biomassGained: 0
+        biomassGained: 0,
+        dissolvedOxygenImpact: dissolvedOxygenImpact, // Set DO impact for daughter
       };
 
       // Update parent and add daughter

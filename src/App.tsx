@@ -5,6 +5,7 @@ import { River, createRiver, createRiverControls, updateRiver, resetRiver, getRi
 import { useRef, useEffect, useState } from "react";
 import { playSimulation, pauseSimulation, resetSimulation, getSimulationState, addStateChangeListener, setSpeedMultiplier, getSpeedMultiplier, getTickCount, getDayCount, togglePlayPause } from "./simulation/SimulationControl";
 import DayDisplay from "./components/DayDisplay";
+import DissolvedOxygenDisplay from "./components/DissolvedOxygenDisplay";
 
 // extend tells @pixi/react what Pixi.js components are available
 extend({
@@ -183,8 +184,8 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
         <input 
           type="range" 
           min="0" 
-          max="1000" 
-          step="10" 
+          max="100" 
+          step="1" 
           value={river.pollutionLevel} 
           onChange={(e) => handlePollutionChange(parseFloat(e.target.value))}
           style={{ width: "80px" }}
@@ -348,7 +349,7 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
 
 const AppContent = () => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [river, setRiver] = useState<River>(createRiver()); // This will always return the same singleton instance
+  const [river, setRiver] = useState<River>(createRiver());
   
   // Handle nutrient consumption by hyacinths
   const handleNutrientConsumption = (consumedAmount: number) => {
@@ -365,6 +366,11 @@ const AppContent = () => {
     const updatedRiver = updateRiver({ 
       pollutionLevel: Math.max(0, currentRiver.pollutionLevel - consumedAmount) 
     });
+    setRiver(updatedRiver);
+  };
+
+  const handleCurrentDOChange = (newDO: number) => {
+    const updatedRiver = updateRiver({ currentDissolvedOxygen: newDO });
     setRiver(updatedRiver);
   };
   
@@ -388,6 +394,9 @@ const AppContent = () => {
 
       {/* Day display below TickDisplay */}
       <DayDisplay />
+
+      {/* Dissolved Oxygen display below DayDisplay */}
+      <DissolvedOxygenDisplay currentDO={river.currentDissolvedOxygen} />
       
       {/* Floating controls overlay */}
       <div style={{ 
@@ -421,7 +430,12 @@ const AppContent = () => {
           resizeTo={containerRef}
           autoDensity={true}
         >
-          <AgentScene river={river} onNutrientConsumption={handleNutrientConsumption} onPollutionConsumption={handlePollutionConsumption} />
+          <AgentScene 
+            river={river} 
+            onNutrientConsumption={handleNutrientConsumption} 
+            onPollutionConsumption={handlePollutionConsumption}
+            onCurrentDOChange={handleCurrentDOChange}
+          />
         </Application>
       </div>
     </div>

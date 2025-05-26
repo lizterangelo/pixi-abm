@@ -24,6 +24,7 @@ export interface Hyacinth {
   currentDaughters: number; // Current number of daughters produced
   futureDaughters: number; // Maximum daughters this hyacinth will produce (1-4)
   biomassGained: number; // Biomass gained since last reproduction
+  dissolvedOxygenImpact: number; // Fixed DO reduction per hyacinth (e.g., 0.08 mg/L)
 }
 
 interface HyacinthSpriteProps {
