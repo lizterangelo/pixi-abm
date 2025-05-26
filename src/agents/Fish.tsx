@@ -7,7 +7,7 @@ import { Hyacinth } from "./Hyacinth";
 import { isSimulationRunning, getSpeedMultiplier } from "../simulation/SimulationControl";
 
 export interface Fish {
-  id: number;
+  id: string;
   x: number;
   y: number;
   rotationSpeed: number;
@@ -24,8 +24,8 @@ interface FishSpriteProps {
   fish: Fish;
   allHyacinths: Hyacinth[];
   river: River;
-  onPositionChange: (id: number, x: number, y: number) => void;
-  onTouchingHyacinthChange: (id: number, touching: boolean) => void;
+  onPositionChange: (id: string, x: number, y: number) => void;
+  onTouchingHyacinthChange: (id: string, touching: boolean) => void;
 }
 
 export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouchingHyacinthChange }: FishSpriteProps) => {
@@ -66,12 +66,9 @@ export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouc
   const getNewTarget = () => {
     if (!app) return { x: fishState.x, y: fishState.y };
     
-    // Add some padding from the edges
-    const padding = Math.max(spriteSize.width, spriteSize.height) / 2;
-    
     return {
-      x: Math.random() * (app.screen.width - padding * 2) + padding,
-      y: Math.random() * (app.screen.height - padding * 2) + padding
+      x: Math.random() * app.screen.width,
+      y: Math.random() * app.screen.height
     };
   };
 
@@ -146,25 +143,39 @@ export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouc
     let newX = currentX + (updatedFish.vx || 0) * deltaTime + riverFlowX * (1 - fish.resistance);
     let newY = currentY + (updatedFish.vy || 0) * deltaTime + riverFlowY * (1 - fish.resistance);
     
-    // Apply bounds checking to keep fish within the screen
+    // Apply smooth edge wrapping for continuous flow
     const halfWidth = spriteSize.width / 2;
     const halfHeight = spriteSize.height / 2;
     
-    // Bounce off the edges
-    if (newX < halfWidth) {
-      newX = halfWidth;
-      updatedFish.vx = Math.abs(updatedFish.vx || 0) * 0.8; // Reverse direction with some damping
-    } else if (newX > app.screen.width - halfWidth) {
-      newX = app.screen.width - halfWidth;
-      updatedFish.vx = -Math.abs(updatedFish.vx || 0) * 0.8; // Reverse direction with some damping
+    // Smooth horizontal wrapping using modulo
+    if (newX > app.screen.width) {
+      newX = newX - app.screen.width;
+    } else if (newX < 0) {
+      newX = newX + app.screen.width;
     }
     
-    if (newY < halfHeight) {
-      newY = halfHeight;
-      updatedFish.vy = Math.abs(updatedFish.vy || 0) * 0.8; // Reverse direction with some damping
-    } else if (newY > app.screen.height - halfHeight) {
-      newY = app.screen.height - halfHeight;
-      updatedFish.vy = -Math.abs(updatedFish.vy || 0) * 0.8; // Reverse direction with some damping
+    // Smooth vertical wrapping using modulo
+    if (newY > app.screen.height) {
+      newY = newY - app.screen.height;
+    } else if (newY < 0) {
+      newY = newY + app.screen.height;
+    }
+    
+    // Update targets if they're outside the wrapped bounds
+    if (updatedFish.targetX !== undefined) {
+      if (updatedFish.targetX > app.screen.width) {
+        updatedFish.targetX = updatedFish.targetX - app.screen.width;
+      } else if (updatedFish.targetX < 0) {
+        updatedFish.targetX = updatedFish.targetX + app.screen.width;
+      }
+    }
+    
+    if (updatedFish.targetY !== undefined) {
+      if (updatedFish.targetY > app.screen.height) {
+        updatedFish.targetY = updatedFish.targetY - app.screen.height;
+      } else if (updatedFish.targetY < 0) {
+        updatedFish.targetY = updatedFish.targetY + app.screen.height;
+      }
     }
     
     // Update the fish state with new position
@@ -186,7 +197,7 @@ export const FishSprite = ({ fish, allHyacinths, river, onPositionChange, onTouc
     spriteRef.current.y = newY;
     
     // Add floating effect - gentle bobbing motion
-    const floatingOffset = Math.sin(floatingTimeRef.current + fish.id * 0.7) * 1.5; // 1.5 pixel amplitude, different phase offset
+    const floatingOffset = Math.sin(floatingTimeRef.current + fish.id.length * 0.7) * 1.5; // Use ID length for phase offset
     spriteRef.current.y += floatingOffset;
     
     // Check collision with hyacinths

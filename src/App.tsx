@@ -3,7 +3,8 @@ import { Container, Sprite } from "pixi.js";
 import { AgentScene } from "./agents/AgentScene";
 import { River, createRiver, createRiverControls, updateRiver, resetRiver, getRiver } from "./environment/River";
 import { useRef, useEffect, useState } from "react";
-import { playSimulation, pauseSimulation, resetSimulation, getSimulationState, addStateChangeListener, setSpeedMultiplier, getSpeedMultiplier, getTickCount } from "./simulation/SimulationControl";
+import { playSimulation, pauseSimulation, resetSimulation, getSimulationState, addStateChangeListener, setSpeedMultiplier, getSpeedMultiplier, getTickCount, getDayCount, togglePlayPause } from "./simulation/SimulationControl";
+import DayDisplay from "./components/DayDisplay";
 
 // extend tells @pixi/react what Pixi.js components are available
 extend({
@@ -93,7 +94,7 @@ const TickDisplay = () => {
       color: "#1976D2",
       fontSize: "12px"
     }}>
-      ⏱️ Ticks: {tickCount} | Speed: {getSpeedLabel(speedMultiplier)} ({speedMultiplier}x)
+      ⏱️ Speed: {getSpeedLabel(speedMultiplier)} ({speedMultiplier}x)
     </div>
   );
 };
@@ -130,8 +131,8 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
         <input 
           type="range" 
           min="0" 
-          max="200" 
-          step="10" 
+          max="10" 
+          step="0.5" 
           value={river.flowRate} 
           onChange={(e) => handleFlowRateChange(parseFloat(e.target.value))}
           style={{ width: "80px" }}
@@ -182,8 +183,8 @@ const RiverControls = ({ river, setRiver }: { river: River, setRiver: (river: Ri
         <input 
           type="range" 
           min="0" 
-          max="100" 
-          step="1" 
+          max="1000" 
+          step="10" 
           value={river.pollutionLevel} 
           onChange={(e) => handlePollutionChange(parseFloat(e.target.value))}
           style={{ width: "80px" }}
@@ -220,12 +221,8 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
     if (window.setupFish) window.setupFish(fishCount);
   };
 
-  const handlePlay = () => {
-    playSimulation();
-  };
-
-  const handlePause = () => {
-    pauseSimulation();
+  const handleTogglePlayPause = () => {
+    togglePlayPause();
   };
 
   const handleReset = () => {
@@ -235,9 +232,7 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
     // @ts-ignore
     if (window.resetAgents) window.resetAgents();
     
-    // Reset the river to initial state
-    const resetRiverState = resetRiver();
-    setRiver(resetRiverState);
+    // Don't reset river settings - keep current user configurations
   };
 
   const handleSpeedChange = (value: number) => {
@@ -267,18 +262,15 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
       {/* Simulation Controls */}
       <div style={{ marginBottom: "8px", display: "flex", gap: "6px" }}>
         <button 
-          onClick={handlePlay} 
-          disabled={simulationState.isPlaying && !simulationState.isPaused}
-          style={{...buttonStyle, backgroundColor: simulationState.isPlaying && !simulationState.isPaused ? "#ccc" : "#4CAF50", fontSize: "11px", padding: "4px 8px"}}
+          onClick={handleTogglePlayPause}
+          style={{
+            ...buttonStyle,
+            backgroundColor: (simulationState.isPlaying && !simulationState.isPaused) ? "#FF9800" : "#4CAF50", // Orange when playing, Green when paused/stopped
+            fontSize: "11px", 
+            padding: "4px 8px"
+          }}
         >
-          ▶️ Play
-        </button>
-        <button 
-          onClick={handlePause} 
-          disabled={!simulationState.isPlaying || simulationState.isPaused}
-          style={{...buttonStyle, backgroundColor: !simulationState.isPlaying || simulationState.isPaused ? "#ccc" : "#FF9800", fontSize: "11px", padding: "4px 8px"}}
-        >
-          ⏸️ Pause
+          {(simulationState.isPlaying && !simulationState.isPaused) ? "⏸️ Pause" : "▶️ Play"}
         </button>
         <button 
           onClick={handleReset} 
@@ -393,6 +385,9 @@ const AppContent = () => {
       
       {/* Tick display at the top center */}
       <TickDisplay />
+
+      {/* Day display below TickDisplay */}
+      <DayDisplay />
       
       {/* Floating controls overlay */}
       <div style={{ 

@@ -14,11 +14,11 @@ export const createRiver = (): River => {
   if (!riverInstance) {
     riverInstance = {
       flowDirection: 0,
-      flowRate: 0,
+      flowRate: 1, // Default flow rate 1
       totalNutrients: 100.0, // Starting with 100 kg of nutrients
       temperature: 30, // Default temperature 30°C
       sunlight: 0.8, // Default sunlight 0.8 (80%)
-      pollutionLevel: 0 // Default pollution level 0%
+      pollutionLevel: 500 // Default pollution level 500%
     };
   }
   return riverInstance;
@@ -42,11 +42,11 @@ export const updateRiver = (updates: Partial<River>): River => {
 export const resetRiver = (): River => {
   riverInstance = {
     flowDirection: 0,
-    flowRate: 0,
+    flowRate: 1, // Reset to default flow rate 1
     totalNutrients: 100.0, // Reset to starting nutrients
     temperature: 30, // Reset temperature
     sunlight: 0.8, // Reset sunlight
-    pollutionLevel: 0 // Reset pollution level
+    pollutionLevel: 500 // Reset pollution level to 500%
   };
   return riverInstance;
 };

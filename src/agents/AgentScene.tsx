@@ -5,6 +5,7 @@ import { Fish, FishSprite } from "./Fish";
 import { River } from "../environment/River";
 import { SimulationManager } from "../simulation/SimulationManager";
 import { isSimulationRunning } from "../simulation/SimulationControl";
+import { v4 as uuidv4 } from 'uuid';
 
 // Calculate growth rate based on environmental factors
 const calculateGrowthRate = (temperature: number, sunlight: number, nur: number): number => {
@@ -31,8 +32,6 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
   const { app } = useApplication();
   const [hyacinths, setHyacinths] = useState<Hyacinth[]>([]);
   const [fish, setFish] = useState<Fish[]>([]);
-  const [hyacinthIdCounter, setHyacinthIdCounter] = useState(0);
-  const [fishIdCounter, setFishIdCounter] = useState(0);
 
   // Handle nutrient and pollution consumption
   const handleNutrientUpdate = () => {
@@ -118,11 +117,6 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
       x = Math.random() * app.screen.width;
       y = Math.random() * app.screen.height;
       
-      // Keep hyacinths away from edges
-      const edgePadding = size / 2 || 15; // Fallback if size not initialized yet
-      x = Math.max(edgePadding, Math.min(app.screen.width - edgePadding, x));
-      y = Math.max(edgePadding, Math.min(app.screen.height - edgePadding, y));
-      
       if (!checkHyacinthOverlap(x, y, minDistance)) {
         foundValidPosition = true;
       }
@@ -143,11 +137,11 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
       const growthRate = calculateGrowthRate(river.temperature, river.sunlight, nur); // Calculate growth rate
       
       setHyacinths([...hyacinths, { 
-        id: hyacinthIdCounter, 
+        id: uuidv4(), 
         x: x!, 
         y: y!,
         rotationSpeed: 0.1,
-        resistance: Math.random() * 0.5 + 0.5, // Random resistance between 0.5 and 1.0
+        resistance: Math.random() * 0.2 + 0.5, // Random resistance between 0.5 and 0.7
         biomass: INIT_BIOMASS, // Start with initial biomass
         nur: nur, // Use the generated NUR
         pol: pol, // Use the generated POL
@@ -155,10 +149,9 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
         parent: null, // Original hyacinths have no parent
         daughters: [], // Start with no daughters
         currentDaughters: 0, // No daughters produced yet
-        futureDaughters: Math.floor(Math.random() * 4) + 1, // Random 1-4 future daughters
+        futureDaughters: Math.floor(Math.random() * 3) + 1, // Random 1-3 future daughters
         biomassGained: 0 // Start with no biomass gained
       }]);
-      setHyacinthIdCounter(hyacinthIdCounter + 1);
     }
   };
 
@@ -178,11 +171,6 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
       x = Math.random() * app.screen.width;
       y = Math.random() * app.screen.height;
       
-      // Keep fish away from edges
-      const edgePadding = fishSize / 2;
-      x = Math.max(edgePadding, Math.min(app.screen.width - edgePadding, x));
-      y = Math.max(edgePadding, Math.min(app.screen.height - edgePadding, y));
-      
       if (!checkFishOverlap(x, y, minDistance)) {
         foundValidPosition = true;
       }
@@ -198,13 +186,12 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
     // Add the fish
     if (foundValidPosition) {
       setFish([...fish, { 
-        id: fishIdCounter, 
+        id: uuidv4(), 
         x: x!, 
         y: y!,
         rotationSpeed: 0.1,
-        resistance: Math.random() * 0.5 + 0.5 // Random resistance between 0.5 and 1.0
+        resistance: Math.random() * 0.5 + 0.5, // Random resistance between 0.5 and 1.0
       }]);
-      setFishIdCounter(fishIdCounter + 1);
     }
   };
 
@@ -212,8 +199,6 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
   const resetAgents = () => {
     setHyacinths([]);
     setFish([]);
-    setHyacinthIdCounter(0);
-    setFishIdCounter(0);
   };
 
   // Function to setup multiple hyacinths
@@ -233,10 +218,6 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
       while (!foundValidPosition && attempts < 100) {
         x = Math.random() * app.screen.width;
         y = Math.random() * app.screen.height;
-        
-        const edgePadding = size / 2 || 15;
-        x = Math.max(edgePadding, Math.min(app.screen.width - edgePadding, x));
-        y = Math.max(edgePadding, Math.min(app.screen.height - edgePadding, y));
         
         // Check against existing hyacinths and new hyacinths being placed
         const overlapsExisting = hyacinths.some(hyacinth => {
@@ -262,9 +243,6 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
         // Use a fallback position if we can't find a good spot
         x = Math.random() * app.screen.width;
         y = Math.random() * app.screen.height;
-        const edgePadding = size / 2 || 15;
-        x = Math.max(edgePadding, Math.min(app.screen.width - edgePadding, x));
-        y = Math.max(edgePadding, Math.min(app.screen.height - edgePadding, y));
       }
       
       const nur = 0.01 + Math.random() * 0.04;
@@ -272,11 +250,11 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
       const growthRate = calculateGrowthRate(river.temperature, river.sunlight, nur);
       
       newHyacinths.push({
-        id: hyacinthIdCounter + i,
+        id: uuidv4(),
         x: x,
         y: y,
         rotationSpeed: 0.1,
-        resistance: Math.random() * 0.5 + 0.5,
+        resistance: Math.random() * 0.2 + 0.5,
         biomass: INIT_BIOMASS,
         nur: nur,
         pol: pol,
@@ -284,13 +262,12 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
         parent: null,
         daughters: [],
         currentDaughters: 0,
-        futureDaughters: Math.floor(Math.random() * 4) + 1,
+        futureDaughters: Math.floor(Math.random() * 3) + 1,
         biomassGained: 0
       });
     }
     
     setHyacinths([...hyacinths, ...newHyacinths]);
-    setHyacinthIdCounter(hyacinthIdCounter + count);
   };
 
   // Function to setup multiple fish
@@ -309,10 +286,6 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
       while (!foundValidPosition && attempts < 100) {
         x = Math.random() * app.screen.width;
         y = Math.random() * app.screen.height;
-        
-        const edgePadding = fishSize / 2;
-        x = Math.max(edgePadding, Math.min(app.screen.width - edgePadding, x));
-        y = Math.max(edgePadding, Math.min(app.screen.height - edgePadding, y));
         
         // Check against existing fish and new fish being placed
         const overlapsExisting = fish.some(fishAgent => {
@@ -338,13 +311,10 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
         // Use a fallback position if we can't find a good spot
         x = Math.random() * app.screen.width;
         y = Math.random() * app.screen.height;
-        const edgePadding = fishSize / 2;
-        x = Math.max(edgePadding, Math.min(app.screen.width - edgePadding, x));
-        y = Math.max(edgePadding, Math.min(app.screen.height - edgePadding, y));
       }
       
       newFish.push({
-        id: fishIdCounter + i,
+        id: uuidv4(),
         x: x,
         y: y,
         rotationSpeed: 0.1,
@@ -353,11 +323,10 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
     }
     
     setFish([...fish, ...newFish]);
-    setFishIdCounter(fishIdCounter + count);
   };
 
   // Handle hyacinth position updates
-  const handleHyacinthPositionChange = (id: number, x: number, y: number) => {
+  const handleHyacinthPositionChange = (id: string, x: number, y: number) => {
     setHyacinths(currentHyacinths => 
       currentHyacinths.map(hyacinth => 
         hyacinth.id === id ? { ...hyacinth, x, y } : hyacinth
@@ -366,7 +335,7 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
   };
 
   // Handle hyacinth biomass updates
-  const handleHyacinthBiomassChange = (id: number, newBiomass: number) => {
+  const handleHyacinthBiomassChange = (id: string, newBiomass: number) => {
     setHyacinths(currentHyacinths => 
       currentHyacinths.map(hyacinth => {
         if (hyacinth.id === id) {
@@ -381,7 +350,7 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
   };
 
   // Handle hyacinth biomass gained updates
-  const handleHyacinthBiomassGainedChange = (id: number, newBiomassGained: number) => {
+  const handleHyacinthBiomassGainedChange = (id: string, newBiomassGained: number) => {
     setHyacinths(currentHyacinths => 
       currentHyacinths.map(hyacinth => 
         hyacinth.id === id ? { ...hyacinth, biomassGained: newBiomassGained } : hyacinth
@@ -390,53 +359,51 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
   };
 
   // Handle hyacinth reproduction
-  const handleHyacinthReproduction = (parentId: number, x: number, y: number) => {
-    const parent = hyacinths.find(h => h.id === parentId);
-    if (!parent) return;
+  const handleHyacinthReproduction = (parentId: string, x: number, y: number) => {
+    setHyacinths(currentHyacinths => {
+      const parent = currentHyacinths.find(h => h.id === parentId);
+      if (!parent) return currentHyacinths;
 
-    // Create daughter hyacinth with unique ID
-    const daughterId = hyacinthIdCounter;
-    const nur = 0.01 + Math.random() * 0.04; // Generate NUR for daughter
-    const pol = 0.1 + Math.random() * 0.4; // Generate POL (0.1-0.5% per second)
-    const growthRate = calculateGrowthRate(river.temperature, river.sunlight, nur);
-    
-    const daughter: Hyacinth = {
-      id: daughterId,
-      x,
-      y,
-      rotationSpeed: 0.1,
-      resistance: parent.resistance + (Math.random() - 0.5) * 0.1, // Slight variation from parent
-      biomass: INIT_BIOMASS,
-      nur: nur,
-      pol: pol,
-      growthRate: growthRate,
-      parent: parentId, // Set parent ID
-      daughters: [],
-      currentDaughters: 0,
-      futureDaughters: Math.floor(Math.random() * 4) + 1, // Random 1-4 future daughters
-      biomassGained: 0
-    };
+      const nur = 0.01 + Math.random() * 0.04; // Generate NUR for daughter
+      const pol = 0.1 + Math.random() * 0.4; // Generate POL (0.1-0.5% per second)
+      const growthRate = calculateGrowthRate(river.temperature, river.sunlight, nur);
+      
+      const daughter: Hyacinth = {
+        id: uuidv4(),
+        x,
+        y,
+        rotationSpeed: 0.1,
+        resistance: parent.resistance, // Inherit exact resistance from parent
+        biomass: INIT_BIOMASS,
+        nur: nur,
+        pol: pol,
+        growthRate: growthRate,
+        parent: parentId, // Set parent ID
+        daughters: [],
+        currentDaughters: 0,
+        futureDaughters: Math.floor(Math.random() * 3) + 1, // Random 1-3 future daughters
+        biomassGained: 0
+      };
 
-    // Update parent and add daughter
-    setHyacinths(currentHyacinths => 
-      currentHyacinths.map(hyacinth => {
+      // Update parent and add daughter
+      const updatedHyacinths = currentHyacinths.map(hyacinth => {
         if (hyacinth.id === parentId) {
           return {
             ...hyacinth,
-            daughters: [...hyacinth.daughters, daughterId],
+            daughters: [...hyacinth.daughters, daughter.id],
             currentDaughters: hyacinth.currentDaughters + 1,
             biomassGained: 0 // Reset biomass gained after reproduction
           };
         }
         return hyacinth;
-      }).concat(daughter)
-    );
-    
-    setHyacinthIdCounter(hyacinthIdCounter + 1);
+      }).concat(daughter);
+
+      return updatedHyacinths;
+    });
   };
 
   // Handle fish position updates
-  const handleFishPositionChange = (id: number, x: number, y: number) => {
+  const handleFishPositionChange = (id: string, x: number, y: number) => {
     setFish(currentFish => 
       currentFish.map(fish => 
         fish.id === id ? { ...fish, x, y } : fish
@@ -445,7 +412,7 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
   };
 
   // Handle fish touching hyacinth state changes
-  const handleFishTouchingHyacinthChange = (id: number, touching: boolean) => {
+  const handleFishTouchingHyacinthChange = (id: string, touching: boolean) => {
     setFish(currentFish => 
       currentFish.map(fish => 
         fish.id === id ? { ...fish, touchingHyacinth: touching } : fish
@@ -467,7 +434,7 @@ export const AgentScene = ({ river, onNutrientConsumption, onPollutionConsumptio
       // @ts-ignore
       window.setupFish = setupFish;
     }
-  }, [app, hyacinths, fish, hyacinthIdCounter, fishIdCounter]);
+  }, [app, hyacinths, fish]);
 
   return (
     <>

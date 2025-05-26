@@ -10,7 +10,7 @@ export const INIT_BIOMASS = 0.5;
 export const MAX_BIOMASS = 2.5;
 
 export interface Hyacinth {
-  id: number;
+  id: string;
   x: number;
   y: number;
   rotationSpeed: number;
@@ -19,8 +19,8 @@ export interface Hyacinth {
   nur: number; // Nutrient Uptake Rate in kg/day (0.01-0.05)
   pol: number; // Pollution absorbed per second (0.1-0.5% per second)
   growthRate: number; // Current growth rate (calculated from environmental factors)
-  parent: number | null; // ID of parent hyacinth (null if original)
-  daughters: number[]; // Array of daughter hyacinth IDs
+  parent: string | null; // ID of parent hyacinth (null if original)
+  daughters: string[]; // Array of daughter hyacinth IDs
   currentDaughters: number; // Current number of daughters produced
   futureDaughters: number; // Maximum daughters this hyacinth will produce (1-4)
   biomassGained: number; // Biomass gained since last reproduction
@@ -30,10 +30,10 @@ interface HyacinthSpriteProps {
   hyacinth: Hyacinth;
   allHyacinths: Hyacinth[];
   river: River;
-  onPositionChange: (id: number, x: number, y: number) => void;
-  onBiomassChange: (id: number, newBiomass: number) => void;
-  onBiomassGainedChange: (id: number, newBiomassGained: number) => void;
-  onReproduction: (parentId: number, x: number, y: number) => void;
+  onPositionChange: (id: string, x: number, y: number) => void;
+  onBiomassChange: (id: string, newBiomass: number) => void;
+  onBiomassGainedChange: (id: string, newBiomassGained: number) => void;
+  onReproduction: (parentId: string, x: number, y: number) => void;
 }
 
 // Create a global reference to the hyacinth size that can be used by other components
@@ -58,22 +58,27 @@ const calculateGrowthRate = (temperature: number, sunlight: number, nur: number)
 
 // Find available space around a hyacinth for reproduction
 const findReproductionSpace = (parent: Hyacinth, allHyacinths: Hyacinth[], spriteSize: { width: number, height: number }): { x: number, y: number } | null => {
-  const radius = Math.max(spriteSize.width, spriteSize.height) * 1.2; // Distance from parent
-  const minDistance = Math.max(spriteSize.width, spriteSize.height) * 0.9; // Minimum distance from other hyacinths
+  const radius = Math.max(spriteSize.width, spriteSize.height) * 2; // Distance from parent (reduced from 1.2 to 0.8)
+  const minDistance = Math.max(spriteSize.width, spriteSize.height) * 0.7; // Minimum distance from other hyacinths (reduced from 0.9 to 0.7)
   
   // Try 8 positions around the parent (cardinal and diagonal directions)
   const angles = [0, Math.PI/4, Math.PI/2, 3*Math.PI/4, Math.PI, 5*Math.PI/4, 3*Math.PI/2, 7*Math.PI/4];
   
   for (const angle of angles) {
-    const x = parent.x + Math.cos(angle) * radius;
-    const y = parent.y + Math.sin(angle) * radius;
+    let x = parent.x + Math.cos(angle) * radius;
+    let y = parent.y + Math.sin(angle) * radius;
     
-    // Check screen boundaries
-    const halfWidth = spriteSize.width / 2;
-    const halfHeight = spriteSize.height / 2;
-    if (x < halfWidth || x > window.innerWidth - halfWidth || 
-        y < halfHeight || y > window.innerHeight - halfHeight) {
-      continue; // Skip positions outside screen
+    // Apply smooth wrapping to the reproduction position
+    if (x > window.innerWidth) {
+      x = x - window.innerWidth;
+    } else if (x < 0) {
+      x = x + window.innerWidth;
+    }
+    
+    if (y > window.innerHeight) {
+      y = y - window.innerHeight;
+    } else if (y < 0) {
+      y = y + window.innerHeight;
     }
     
     // Check if position is valid (not overlapping with other hyacinths)
@@ -106,6 +111,16 @@ export const HyacinthSprite = ({ hyacinth, allHyacinths, river, onPositionChange
   const { app } = useApplication();
   const lastGrowthUpdateRef = useRef<number>(0);
   const floatingTimeRef = useRef<number>(0); // For floating animation
+  
+  // Add velocity state for smooth movement
+  const velocityRef = useRef({ vx: 0, vy: 0 });
+  const positionRef = useRef({ x: hyacinth.x, y: hyacinth.y });
+
+  // Sync position when hyacinth prop changes
+  useEffect(() => {
+    positionRef.current.x = hyacinth.x;
+    positionRef.current.y = hyacinth.y;
+  }, [hyacinth.x, hyacinth.y]);
 
   // Preload the sprite and update size when biomass changes
   useEffect(() => {
@@ -186,111 +201,137 @@ export const HyacinthSprite = ({ hyacinth, allHyacinths, river, onPositionChange
     const riverFlowX = Math.cos(river.flowDirection) * river.flowRate * deltaTime;
     const riverFlowY = Math.sin(river.flowDirection) * river.flowRate * deltaTime;
     
-    // Calculate new position with river flow
-    let newX = hyacinth.x + riverFlowX * (1 - hyacinth.resistance);
-    let newY = hyacinth.y + riverFlowY * (1 - hyacinth.resistance);
+    // Start with current position
+    let newX = positionRef.current.x;
+    let newY = positionRef.current.y;
     
-    // Handle parent-daughter connections
-    if (hyacinth.parent !== null) {
-      // Find parent hyacinth
-      const parent = allHyacinths.find(h => h.id === hyacinth.parent);
-      if (parent) {
-        // Calculate desired connection distance
-        const connectionDistance = Math.max(spriteSize.width, spriteSize.height) * 1.1;
-        
-        const dx = newX - parent.x;
-        const dy = newY - parent.y;
-        const currentDistance = Math.sqrt(dx * dx + dy * dy);
-        
-        // If too far from parent, pull towards parent
-        if (currentDistance > connectionDistance) {
-          const pullStrength = 0.8; // How strongly daughters are pulled to parent
-          const unitX = dx / currentDistance;
-          const unitY = dy / currentDistance;
-          
-          // Move towards parent to maintain connection
-          newX = parent.x + unitX * connectionDistance;
-          newY = parent.y + unitY * connectionDistance;
-        }
-      }
-    }
+    // Apply river flow to velocity
+    velocityRef.current.vx += riverFlowX * (1 - hyacinth.resistance) * 0.1;
+    velocityRef.current.vy += riverFlowY * (1 - hyacinth.resistance) * 0.1;
     
-    // Apply bounds checking to keep hyacinth within the screen
-    const halfWidth = spriteSize.width / 2;
-    const halfHeight = spriteSize.height / 2;
-    
-    // Clamp position to screen boundaries
-    if (newX < halfWidth) {
-      newX = halfWidth;
-    } else if (newX > app.screen.width - halfWidth) {
-      newX = app.screen.width - halfWidth;
-    }
-    
-    if (newY < halfHeight) {
-      newY = halfHeight;
-    } else if (newY > app.screen.height - halfHeight) {
-      newY = app.screen.height - halfHeight;
-    }
-    
-    // Check for collisions with other hyacinths and resolve them
-    let collisionCount = 0;
-    const maxCollisionsPerFrame = 3; // Limit collision checks to prevent excessive pushing
+    // Apply soft collision forces to velocity
+    let totalForceX = 0;
+    let totalForceY = 0;
     
     for (const otherHyacinth of allHyacinths) {
       if (otherHyacinth.id === hyacinth.id) continue; // Skip self
-      if (collisionCount >= maxCollisionsPerFrame) break; // Limit collisions per frame
       
       // Calculate minimum distance based on both hyacinths' biomass
-      const baseScale = 0.06; // Use the same scale as in size calculation
-      const baseSize = texture.width * baseScale; // Base size from texture
+      const baseScale = 0.06;
+      const baseSize = texture.width * baseScale;
       
-      const thisRadius = (baseSize * hyacinth.biomass / 2) * 0.8; // Slightly smaller collision radius
-      const otherRadius = (baseSize * otherHyacinth.biomass / 2) * 0.8; // Slightly smaller collision radius
-      const minDistance = thisRadius + otherRadius;
+      const thisRadius = (baseSize * hyacinth.biomass / 2) * 0.9;
+      const otherRadius = (baseSize * otherHyacinth.biomass / 2) * 0.9;
+      const comfortDistance = thisRadius + otherRadius + 10; // Add comfort zone
       
       const dx = newX - otherHyacinth.x;
       const dy = newY - otherHyacinth.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
-      if (distance < minDistance && distance > 0) {
-        // Calculate overlap amount
-        const overlap = minDistance - distance;
+      if (distance < comfortDistance && distance > 0) {
+        // Calculate repulsion force (stronger when closer)
+        const repulsionStrength = (comfortDistance - distance) / comfortDistance;
+        const forceMultiplier = repulsionStrength * repulsionStrength * 0.3; // Quadratic falloff
         
         // Calculate unit vector pointing away from other hyacinth
         const unitX = dx / distance;
         const unitY = dy / distance;
         
-        // Apply gentler collision resolution with damping
-        const pushForce = Math.min(overlap * 0.05, 1.0); // Much gentler push force
-        const damping = 0.15; // Much stronger damping for softer movements
+        // Add repulsion force to total
+        totalForceX += unitX * forceMultiplier;
+        totalForceY += unitY * forceMultiplier;
+      }
+    }
+    
+    // Apply repulsion forces to velocity
+    velocityRef.current.vx += totalForceX * deltaTime;
+    velocityRef.current.vy += totalForceY * deltaTime;
+    
+    // Apply velocity damping for stability
+    const damping = 0.85;
+    velocityRef.current.vx *= damping;
+    velocityRef.current.vy *= damping;
+    
+    // Limit maximum velocity to prevent excessive movement
+    const maxVelocity = 3.0;
+    const currentSpeed = Math.sqrt(velocityRef.current.vx ** 2 + velocityRef.current.vy ** 2);
+    if (currentSpeed > maxVelocity) {
+      velocityRef.current.vx = (velocityRef.current.vx / currentSpeed) * maxVelocity;
+      velocityRef.current.vy = (velocityRef.current.vy / currentSpeed) * maxVelocity;
+    }
+    
+    // Apply velocity to position
+    newX += velocityRef.current.vx * deltaTime;
+    newY += velocityRef.current.vy * deltaTime;
+    
+    // Handle parent-daughter connections with velocity-based forces
+    if (hyacinth.parent !== null) {
+      // Find parent hyacinth
+      const parent = allHyacinths.find(h => h.id === hyacinth.parent);
+      if (parent) {
+        // Calculate desired connection distance
+        const connectionDistance = Math.max(spriteSize.width, spriteSize.height) * 3;
         
-        // Move this hyacinth away with reduced force
-        newX += unitX * pushForce * damping;
-        newY += unitY * pushForce * damping;
+        // Calculate wrapped distance (shortest path considering screen wrapping)
+        let dx = newX - parent.x;
+        let dy = newY - parent.y;
         
-        collisionCount++;
-        
-        // Apply bounds checking again after collision resolution
-        if (newX < halfWidth) {
-          newX = halfWidth;
-        } else if (newX > app.screen.width - halfWidth) {
-          newX = app.screen.width - halfWidth;
+        // Handle horizontal wrapping - find shortest distance
+        if (Math.abs(dx) > app.screen.width / 2) {
+          if (dx > 0) {
+            dx = dx - app.screen.width;
+          } else {
+            dx = dx + app.screen.width;
+          }
         }
         
-        if (newY < halfHeight) {
-          newY = halfHeight;
-        } else if (newY > app.screen.height - halfHeight) {
-          newY = app.screen.height - halfHeight;
+        // Handle vertical wrapping - find shortest distance
+        if (Math.abs(dy) > app.screen.height / 2) {
+          if (dy > 0) {
+            dy = dy - app.screen.height;
+          } else {
+            dy = dy + app.screen.height;
+          }
+        }
+        
+        const currentDistance = Math.sqrt(dx * dx + dy * dy);
+        
+        // If too far from parent, apply pull force to velocity
+        if (currentDistance > connectionDistance) {
+          const pullStrength = 0.05; // Gentle pull force
+          const unitX = dx / currentDistance;
+          const unitY = dy / currentDistance;
+          
+          // Apply pull force to velocity instead of direct position change
+          velocityRef.current.vx -= unitX * pullStrength * deltaTime;
+          velocityRef.current.vy -= unitY * pullStrength * deltaTime;
         }
       }
     }
+    
+    // Apply smooth edge wrapping for continuous flow (for all hyacinths)
+    if (newX > app.screen.width) {
+      newX = newX - app.screen.width;
+    } else if (newX < 0) {
+      newX = newX + app.screen.width;
+    }
+    
+    if (newY > app.screen.height) {
+      newY = newY - app.screen.height;
+    } else if (newY < 0) {
+      newY = newY + app.screen.height;
+    }
+    
+    // Update position references
+    positionRef.current.x = newX;
+    positionRef.current.y = newY;
     
     // Update sprite position
     spriteRef.current.x = newX;
     spriteRef.current.y = newY;
     
     // Add floating effect - gentle bobbing motion
-    const floatingOffset = Math.sin(floatingTimeRef.current + hyacinth.id * 0.5) * 2; // 2 pixel amplitude, phase offset by ID
+    const floatingOffset = Math.sin(floatingTimeRef.current + hyacinth.id.length * 0.5) * 2; // Use ID length for phase offset
     spriteRef.current.y += floatingOffset;
     
     // Update hyacinth position in state
