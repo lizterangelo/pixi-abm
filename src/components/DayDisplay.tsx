@@ -28,7 +28,7 @@ const DayDisplay = () => {
         whiteSpace: "nowrap",
       }}
     >
-      ☀️ Day: {dayCount}
+      ☀️ Week: {dayCount}
     </div>
   );
 };

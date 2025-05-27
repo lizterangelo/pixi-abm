@@ -132,7 +132,7 @@ const PopulationGraph = ({
     ctx.textAlign = "center";
 
     // X-axis label
-    ctx.fillText("Days", canvas.width / 2, canvas.height - 5);
+    ctx.fillText("Weeks", canvas.width / 2, canvas.height - 5);
 
     // Y-axis label
     ctx.save();
@@ -379,7 +379,7 @@ const OxygenGraph = ({
     ctx.textAlign = "center";
 
     // X-axis label
-    ctx.fillText("Days", canvas.width / 2, canvas.height - 5);
+    ctx.fillText("Weeks", canvas.width / 2, canvas.height - 5);
 
     // Y-axis label
     ctx.save();

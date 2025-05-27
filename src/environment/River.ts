@@ -5,8 +5,8 @@ export interface River {
   temperature: number; // temperature in °C (25-35°C)
   sunlight: number; // sunlight scale (0.0-1.0)
   pollutionLevel: number; // pollution level as percentage (0-100%)
-  initialDissolvedOxygen: number; // mg/L, e.g., at saturation without plants
-  currentDissolvedOxygen: number; // mg/L, current level affected by plants
+  initialDissolvedOxygen: number; // mg/L, e.g., at saturation without plants (max 7.0)
+  currentDissolvedOxygen: number; // mg/L, current level affected by plants (max 7.0)
 }
 
 // Singleton river instance
