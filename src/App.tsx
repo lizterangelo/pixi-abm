@@ -824,7 +824,7 @@ const SetupControls = ({
 
   const handleBaselineSetup = () => {
     // Set baseline parameters from the screenshot
-    setHyacinthCount(20);
+    setHyacinthCount(5);
     setHyacinthReproduceRate(12);
     setFishCount(15);
     setFishReproduceRate(6);
@@ -836,7 +836,7 @@ const SetupControls = ({
       totalNutrients: 500,
       temperature: 30,
       sunlight: 0.8,
-      pollutionLevel: 33,
+      pollutionLevel: 16,
     });
     setRiver(baselineRiver);
 
