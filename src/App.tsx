@@ -52,6 +52,12 @@ interface OxygenDataPoint {
   oxygenLevel: number;
 }
 
+// Interface for pollution data points
+interface PollutionDataPoint {
+  day: number;
+  pollutionLevel: number;
+}
+
 const PopulationGraph = ({
   populationData,
 }: {
@@ -763,6 +769,7 @@ const SetupControls = ({
   setRiver, 
   populationData, 
   oxygenData, 
+  pollutionData,
   currentRiver, 
   currentFishCount, 
   currentHyacinthCount 
@@ -770,6 +777,7 @@ const SetupControls = ({
   setRiver: (river: River) => void;
   populationData: PopulationDataPoint[];
   oxygenData: OxygenDataPoint[];
+  pollutionData: PollutionDataPoint[];
   currentRiver: River;
   currentFishCount: number;
   currentHyacinthCount: number;
@@ -898,14 +906,16 @@ const SetupControls = ({
       // Find the closest data point for this week, or use current values
       const populationPoint = populationData.find(p => Math.floor(p.day) === week);
       const oxygenPoint = oxygenData.find(o => Math.floor(o.day) === week);
+      const pollutionPoint = pollutionData.find(p => Math.floor(p.day) === week);
       
       const fishCount = populationPoint ? populationPoint.fishCount : currentFishCount;
       const hyacinthCount = populationPoint ? populationPoint.hyacinthCount : currentHyacinthCount;
       const oxygenLevel = oxygenPoint ? oxygenPoint.oxygenLevel : currentRiver.currentDissolvedOxygen;
+      const pollutionLevel = pollutionPoint ? pollutionPoint.pollutionLevel : currentRiver.pollutionLevel;
       
       csvData.push([
         week,
-        currentRiver.pollutionLevel.toFixed(2),
+        pollutionLevel.toFixed(2),
         oxygenLevel.toFixed(2),
         fishCount,
         hyacinthCount
@@ -1218,6 +1228,7 @@ const AppContent = () => {
     [],
   );
   const [oxygenData, setOxygenData] = useState<OxygenDataPoint[]>([]);
+  const [pollutionData, setPollutionData] = useState<PollutionDataPoint[]>([]);
   const [isUIVisible, setIsUIVisible] = useState(true);
   const lastRecordedDay = useRef<number>(-1);
   
@@ -1278,6 +1289,17 @@ const AppContent = () => {
         // Keep all oxygen data points
         return [...prevData, newOxygenPoint];
       });
+
+      // Record pollution data
+      setPollutionData((prevData) => {
+        const newPollutionPoint: PollutionDataPoint = {
+          day: currentDay,
+          pollutionLevel: river.pollutionLevel,
+        };
+
+        // Keep all pollution data points
+        return [...prevData, newPollutionPoint];
+      });
     }
   };
 
@@ -1288,6 +1310,7 @@ const AppContent = () => {
       if (currentDay === 0 && lastRecordedDay.current !== 0) {
         setPopulationData([]);
         setOxygenData([]);
+        setPollutionData([]);
         lastRecordedDay.current = -1;
       }
     });
@@ -1355,7 +1378,7 @@ const AppContent = () => {
         >
           {/* Setup and Control */}
           <div style={{ pointerEvents: "auto" }}>
-            <SetupControls setRiver={setRiver} populationData={populationData} oxygenData={oxygenData} currentRiver={river} currentFishCount={fishCount} currentHyacinthCount={hyacinthCount} />
+            <SetupControls setRiver={setRiver} populationData={populationData} oxygenData={oxygenData} pollutionData={pollutionData} currentRiver={river} currentFishCount={fishCount} currentHyacinthCount={hyacinthCount} />
           </div>
 
           {/* River Controls */}
