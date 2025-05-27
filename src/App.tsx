@@ -546,7 +546,7 @@ const NutrientsDisplay = ({ totalNutrients }: { totalNutrients: number }) => {
         whiteSpace: "nowrap",
       }}
     >
-      🌱 Nutrients: {totalNutrients.toFixed(1)}
+      🌱 Nutrients: {totalNutrients.toFixed(1)} kg
     </div>
   );
 };
@@ -759,7 +759,21 @@ const RiverControls = ({
   );
 };
 
-const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
+const SetupControls = ({ 
+  setRiver, 
+  populationData, 
+  oxygenData, 
+  currentRiver, 
+  currentFishCount, 
+  currentHyacinthCount 
+}: { 
+  setRiver: (river: River) => void;
+  populationData: PopulationDataPoint[];
+  oxygenData: OxygenDataPoint[];
+  currentRiver: River;
+  currentFishCount: number;
+  currentHyacinthCount: number;
+}) => {
   const [hyacinthCount, setHyacinthCount] = useState(5);
   const [fishCount, setFishCount] = useState(3);
   const [hyacinthReproduceRate, setHyacinthReproduceRate] = useState(5);
@@ -806,6 +820,45 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
     setRiver(optimalRiver);
 
     // Note: Don't spawn agents automatically - user should click Setup button
+  };
+
+  const handleExportCSV = () => {
+    // Create CSV data for 350 weeks
+    const csvData = [];
+    csvData.push(['Weeks', 'Total Pollution', 'Dissolved Oxygen', 'Fish Count', 'Hyacinth Count']);
+    
+    // Generate data for 350 weeks
+    for (let week = 0; week <= 350; week++) {
+      // Find the closest data point for this week, or use current values
+      const populationPoint = populationData.find(p => Math.floor(p.day) === week);
+      const oxygenPoint = oxygenData.find(o => Math.floor(o.day) === week);
+      
+      const fishCount = populationPoint ? populationPoint.fishCount : currentFishCount;
+      const hyacinthCount = populationPoint ? populationPoint.hyacinthCount : currentHyacinthCount;
+      const oxygenLevel = oxygenPoint ? oxygenPoint.oxygenLevel : currentRiver.currentDissolvedOxygen;
+      
+      csvData.push([
+        week,
+        currentRiver.pollutionLevel.toFixed(2),
+        oxygenLevel.toFixed(2),
+        fishCount,
+        hyacinthCount
+      ]);
+    }
+    
+    // Convert to CSV string
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    
+    // Create and download file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `simulation_data_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleHyacinthReproduceRateChange = (newRate: number) => {
@@ -878,6 +931,22 @@ const SetupControls = ({ setRiver }: { setRiver: (river: River) => void }) => {
         }}
       >
         ✨ Optimal Settings
+      </button>
+
+      {/* CSV Export Button */}
+      <button
+        onClick={handleExportCSV}
+        style={{
+          ...buttonStyle,
+          backgroundColor: "#2196F3", // Blue color for export
+          fontSize: "12px",
+          padding: "8px 12px",
+          marginBottom: "8px",
+          width: "100%",
+          fontWeight: "bold",
+        }}
+      >
+        📊 Export CSV Data
       </button>
 
       {/* Simulation Controls */}
@@ -1170,7 +1239,7 @@ const AppContent = () => {
         >
           {/* Setup and Control */}
           <div style={{ pointerEvents: "auto" }}>
-            <SetupControls setRiver={setRiver} />
+            <SetupControls setRiver={setRiver} populationData={populationData} oxygenData={oxygenData} currentRiver={river} currentFishCount={fishCount} currentHyacinthCount={hyacinthCount} />
           </div>
 
           {/* River Controls */}
