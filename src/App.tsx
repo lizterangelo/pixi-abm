@@ -546,7 +546,7 @@ const NutrientsDisplay = ({ totalNutrients }: { totalNutrients: number }) => {
         whiteSpace: "nowrap",
       }}
     >
-      🌱 Nutrients: {totalNutrients.toFixed(1)} kg
+      🌱 Nutrients: {totalNutrients.toFixed(1)}
     </div>
   );
 };
