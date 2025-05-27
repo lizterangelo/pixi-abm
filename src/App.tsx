@@ -535,12 +535,12 @@ const NutrientsDisplay = ({ totalNutrients }: { totalNutrients: number }) => {
   return (
     <div
       style={{
-        backgroundColor: "rgba(255, 255, 255, 0.9)",
+      backgroundColor: "rgba(255, 255, 255, 0.9)",
         padding: "6px 12px",
         borderRadius: "15px",
-        border: "2px solid #4CAF50",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-        fontWeight: "bold",
+      border: "2px solid #4CAF50",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+      fontWeight: "bold",
         color: "#2E7D32",
         fontSize: "12px",
         whiteSpace: "nowrap",
@@ -558,16 +558,16 @@ const PollutionDisplay = ({ pollutionLevel }: { pollutionLevel: number }) => {
       : pollutionLevel > 20
         ? "#FF9800"
         : "#4CAF50";
-
+  
   return (
     <div
       style={{
-        backgroundColor: "rgba(255, 255, 255, 0.9)",
+      backgroundColor: "rgba(255, 255, 255, 0.9)",
         padding: "6px 12px",
         borderRadius: "15px",
-        border: `2px solid ${pollutionColor}`,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-        fontWeight: "bold",
+      border: `2px solid ${pollutionColor}`,
+      boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+      fontWeight: "bold",
         color: pollutionColor,
         fontSize: "12px",
         whiteSpace: "nowrap",
@@ -602,12 +602,12 @@ const HyacinthCountDisplay = ({ hyacinthCount }: { hyacinthCount: number }) => {
   return (
     <div
       style={{
-        backgroundColor: "rgba(255, 255, 255, 0.9)",
+      backgroundColor: "rgba(255, 255, 255, 0.9)",
         padding: "6px 12px",
         borderRadius: "15px",
         border: "2px solid #8BC34A",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-        fontWeight: "bold",
+      boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+      fontWeight: "bold",
         color: "#558B2F",
         fontSize: "12px",
         whiteSpace: "nowrap",
@@ -637,12 +637,12 @@ const RiverControls = ({
   return (
     <div
       style={{
-        backgroundColor: "rgba(255, 255, 255, 0.8)",
-        padding: "8px",
-        borderRadius: "5px",
-        border: "1px solid #ccc",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-        color: "black",
+      backgroundColor: "rgba(255, 255, 255, 0.8)",
+      padding: "8px",
+      borderRadius: "5px",
+      border: "1px solid #ccc",
+      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+      color: "black",
         fontSize: "12px",
       }}
     >
@@ -653,12 +653,12 @@ const RiverControls = ({
         <label style={{ color: "black", fontSize: "11px" }}>
           Flow Direction:{" "}
         </label>
-        <input
-          type="range"
-          min="0"
-          max="6.28"
-          step="0.1"
-          value={river.flowDirection}
+        <input 
+          type="range" 
+          min="0" 
+          max="6.28" 
+          step="0.1" 
+          value={river.flowDirection} 
           onChange={(e) =>
             handleFlowDirectionChange(parseFloat(e.target.value))
           }
@@ -671,12 +671,12 @@ const RiverControls = ({
       </div>
       <div style={{ marginBottom: "6px" }}>
         <label style={{ color: "black", fontSize: "11px" }}>Flow Rate: </label>
-        <input
-          type="range"
-          min="0"
-          max="10"
-          step="0.5"
-          value={river.flowRate}
+        <input 
+          type="range" 
+          min="0" 
+          max="10" 
+          step="0.5" 
+          value={river.flowRate} 
           onChange={(e) => handleFlowRateChange(parseFloat(e.target.value))}
           style={{ width: "80px" }}
         />
@@ -689,12 +689,12 @@ const RiverControls = ({
         <label style={{ color: "black", fontSize: "11px" }}>
           Nutrients:{" "}
         </label>
-        <input
-          type="range"
-          min="0"
-          max="500"
-          step="5"
-          value={river.totalNutrients}
+        <input 
+          type="range" 
+          min="0" 
+          max="500" 
+          step="5" 
+          value={river.totalNutrients} 
           onChange={(e) => handleNutrientsChange(parseFloat(e.target.value))}
           style={{ width: "80px" }}
         />
@@ -707,12 +707,12 @@ const RiverControls = ({
         <label style={{ color: "black", fontSize: "11px" }}>
           Temperature (°C):{" "}
         </label>
-        <input
-          type="range"
-          min="12"
-          max="45"
-          step="1"
-          value={river.temperature}
+        <input 
+          type="range" 
+          min="12" 
+          max="45" 
+          step="1" 
+          value={river.temperature} 
           onChange={(e) => handleTemperatureChange(parseFloat(e.target.value))}
           style={{ width: "80px" }}
         />
@@ -723,12 +723,12 @@ const RiverControls = ({
       </div>
       <div style={{ marginBottom: "6px" }}>
         <label style={{ color: "black", fontSize: "11px" }}>Sunlight: </label>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.1"
-          value={river.sunlight}
+        <input 
+          type="range" 
+          min="0" 
+          max="1" 
+          step="0.1" 
+          value={river.sunlight} 
           onChange={(e) => handleSunlightChange(parseFloat(e.target.value))}
           style={{ width: "80px" }}
         />
@@ -741,12 +741,12 @@ const RiverControls = ({
         <label style={{ color: "black", fontSize: "11px" }}>
           Pollution (%):{" "}
         </label>
-        <input
-          type="range"
-          min="0"
-          max="100"
-          step="1"
-          value={river.pollutionLevel}
+        <input 
+          type="range" 
+          min="0" 
+          max="100" 
+          step="1" 
+          value={river.pollutionLevel} 
           onChange={(e) => handlePollutionChange(parseFloat(e.target.value))}
           style={{ width: "80px" }}
         />
@@ -822,13 +822,79 @@ const SetupControls = ({
     // Note: Don't spawn agents automatically - user should click Setup button
   };
 
+  const handleBaselineSetup = () => {
+    // Set baseline parameters from the screenshot
+    setHyacinthCount(20);
+    setHyacinthReproduceRate(12);
+    setFishCount(15);
+    setFishReproduceRate(6);
+
+    // Update river settings to baseline values
+    const baselineRiver = updateRiver({
+      flowDirection: 0.0,
+      flowRate: 1,
+      totalNutrients: 500,
+      temperature: 30,
+      sunlight: 0.8,
+      pollutionLevel: 33,
+    });
+    setRiver(baselineRiver);
+
+    // Note: Don't spawn agents automatically - user should click Setup button
+  };
+
+  const handleScenario2Setup = () => {
+    // Set scenario 2 parameters from the screenshot
+    setHyacinthCount(20);
+    setHyacinthReproduceRate(12);
+    setFishCount(0);
+    setFishReproduceRate(6);
+
+    // Update river settings to scenario 2 values
+    const scenario2River = updateRiver({
+      flowDirection: 0.0,
+      flowRate: 1,
+      totalNutrients: 500,
+      temperature: 30,
+      sunlight: 0.8,
+      pollutionLevel: 100,
+    });
+    setRiver(scenario2River);
+
+    // Note: Don't spawn agents automatically - user should click Setup button
+  };
+
+  const handleScenario3Setup = () => {
+    // Set scenario 3 parameters from the screenshot
+    setHyacinthCount(20);
+    setHyacinthReproduceRate(12);
+    setFishCount(15);
+    setFishReproduceRate(6);
+
+    // Update river settings to scenario 3 values
+    const scenario3River = updateRiver({
+      flowDirection: 0.0,
+      flowRate: 1,
+      totalNutrients: 10,
+      temperature: 30,
+      sunlight: 0.8,
+      pollutionLevel: 33,
+    });
+    setRiver(scenario3River);
+
+    // Note: Don't spawn agents automatically - user should click Setup button
+  };
+
   const handleExportCSV = () => {
-    // Create CSV data for 350 weeks
+    // Get current simulation day
+    const currentDay = getDayCount();
+    
+    // Create CSV data based on current simulation progress
     const csvData = [];
     csvData.push(['Weeks', 'Total Pollution', 'Dissolved Oxygen', 'Fish Count', 'Hyacinth Count']);
     
-    // Generate data for 350 weeks
-    for (let week = 0; week <= 350; week++) {
+    // Generate data from week 0 to current week
+    for (let week = 0; week <= currentDay; week++) {
       // Find the closest data point for this week, or use current values
       const populationPoint = populationData.find(p => Math.floor(p.day) === week);
       const oxygenPoint = oxygenData.find(o => Math.floor(o.day) === week);
@@ -849,12 +915,12 @@ const SetupControls = ({
     // Convert to CSV string
     const csvContent = csvData.map(row => row.join(',')).join('\n');
     
-    // Create and download file
+    // Create and download file with current day info in filename
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `simulation_data_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute('download', `simulation_data_week${currentDay}_${new Date().toISOString().slice(0, 10)}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -883,10 +949,10 @@ const SetupControls = ({
 
   const handleReset = () => {
     resetSimulation(); // Resets simulation state (time, ticks, days, play/pause)
-
+    
     // Reset agents (clears hyacinth and fish arrays via window.resetAgents)
     if (window.resetAgents) window.resetAgents();
-
+    
     // Explicitly set desired river parameters after general reset
     // To ensure all other default values from resetRiver() are applied first:
     let riverStateAfterFullReset = resetRiver();
@@ -905,12 +971,14 @@ const SetupControls = ({
   return (
     <div
       style={{
-        backgroundColor: "rgba(255, 255, 255, 0.8)",
-        padding: "8px",
-        borderRadius: "5px",
-        border: "1px solid #ccc",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+      backgroundColor: "rgba(255, 255, 255, 0.8)",
+      padding: "8px",
+      borderRadius: "5px",
+      border: "1px solid #ccc",
+      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
         fontSize: "12px",
+        maxWidth: "220px",
+        minWidth: "200px",
       }}
     >
       <h4 style={{ margin: "0 0 8px 0", color: "black", fontSize: "14px" }}>
@@ -933,6 +1001,54 @@ const SetupControls = ({
         ✨ Optimal Settings
       </button>
 
+      {/* Baseline Setup Button */}
+      <button
+        onClick={handleBaselineSetup}
+        style={{
+          ...buttonStyle,
+          backgroundColor: "#2196F3", // Blue color for baseline
+          fontSize: "12px",
+          padding: "8px 12px",
+          marginBottom: "8px",
+          width: "100%",
+          fontWeight: "bold",
+        }}
+      >
+        🔄 Baseline Settings
+      </button>
+
+      {/* Scenario 2 Setup Button */}
+      <button
+        onClick={handleScenario2Setup}
+        style={{
+          ...buttonStyle,
+          backgroundColor: "#FF9800", // Orange color for scenario 2
+          fontSize: "12px",
+          padding: "8px 12px",
+          marginBottom: "8px",
+          width: "100%",
+          fontWeight: "bold",
+        }}
+      >
+        🔄 Scenario 2 Settings
+      </button>
+
+      {/* Scenario 3 Setup Button */}
+      <button
+        onClick={handleScenario3Setup}
+        style={{
+          ...buttonStyle,
+          backgroundColor: "#4CAF50", // Green color for scenario 3
+          fontSize: "12px",
+          padding: "8px 12px",
+          marginBottom: "8px",
+          width: "100%",
+          fontWeight: "bold",
+        }}
+      >
+        🔄 Scenario 3 Settings
+      </button>
+
       {/* CSV Export Button */}
       <button
         onClick={handleExportCSV}
@@ -948,10 +1064,10 @@ const SetupControls = ({
       >
         📊 Export CSV Data
       </button>
-
+      
       {/* Simulation Controls */}
       <div style={{ marginBottom: "8px", display: "flex", gap: "6px" }}>
-        <button
+        <button 
           onClick={handleTogglePlayPause}
           style={{
             ...buttonStyle,
@@ -959,7 +1075,7 @@ const SetupControls = ({
               simulationState.isPlaying && !simulationState.isPaused
                 ? "#FF9800"
                 : "#4CAF50", // Orange when playing, Green when paused/stopped
-            fontSize: "11px",
+            fontSize: "11px", 
             padding: "4px 8px",
             flex: 1,
           }}
@@ -968,8 +1084,8 @@ const SetupControls = ({
             ? "⏸️ Pause"
             : "▶️ Play"}
         </button>
-        <button
-          onClick={handleReset}
+        <button 
+          onClick={handleReset} 
           style={{
             ...buttonStyle,
             backgroundColor: "#f44336",
@@ -1022,12 +1138,12 @@ const SetupControls = ({
       {/* Agent Setup */}
       <div style={{ marginBottom: "6px" }}>
         <label style={{ color: "black", fontSize: "11px" }}>Hyacinths: </label>
-        <input
-          type="range"
-          min="0"
-          max="20"
-          step="1"
-          value={hyacinthCount}
+        <input 
+          type="range" 
+          min="0" 
+          max="20" 
+          step="1" 
+          value={hyacinthCount} 
           onChange={(e) => setHyacinthCount(parseInt(e.target.value))}
           style={{ width: "80px" }}
         />
@@ -1040,12 +1156,12 @@ const SetupControls = ({
         <label style={{ color: "black", fontSize: "11px" }}>
           Hyacinth Reproduce Rate:{" "}
         </label>
-        <input
-          type="range"
+        <input 
+          type="range" 
           min="1"
           max="100"
           step="1"
-          value={hyacinthReproduceRate}
+          value={hyacinthReproduceRate} 
           onChange={(e) =>
             handleHyacinthReproduceRateChange(parseInt(e.target.value))
           }
@@ -1058,12 +1174,12 @@ const SetupControls = ({
       </div>
       <div style={{ marginBottom: "6px" }}>
         <label style={{ color: "black", fontSize: "11px" }}>Fish: </label>
-        <input
-          type="range"
-          min="0"
-          max="15"
-          step="1"
-          value={fishCount}
+        <input 
+          type="range" 
+          min="0" 
+          max="15" 
+          step="1" 
+          value={fishCount} 
           onChange={(e) => setFishCount(parseInt(e.target.value))}
           style={{ width: "80px" }}
         />
@@ -1073,12 +1189,12 @@ const SetupControls = ({
         <label style={{ color: "black", fontSize: "11px" }}>
           Fish Reproduce Rate:{" "}
         </label>
-        <input
-          type="range"
+        <input 
+          type="range" 
           min="1"
           max="100"
           step="1"
-          value={fishReproduceRate}
+          value={fishReproduceRate} 
           onChange={(e) =>
             handleFishReproduceRateChange(parseInt(e.target.value))
           }
@@ -1104,20 +1220,20 @@ const AppContent = () => {
   const [oxygenData, setOxygenData] = useState<OxygenDataPoint[]>([]);
   const [isUIVisible, setIsUIVisible] = useState(true);
   const lastRecordedDay = useRef<number>(-1);
-
+  
   // Handle nutrient consumption by hyacinths
   const handleNutrientConsumption = (consumedAmount: number) => {
     const currentRiver = getRiver(); // Get the current singleton state
-    const updatedRiver = updateRiver({
+    const updatedRiver = updateRiver({ 
       totalNutrients: Math.max(0, currentRiver.totalNutrients - consumedAmount),
     });
     setRiver(updatedRiver);
   };
-
+  
   // Handle pollution consumption by hyacinths
   const handlePollutionConsumption = (consumedAmount: number) => {
     const currentRiver = getRiver(); // Get the current singleton state
-    const updatedRiver = updateRiver({
+    const updatedRiver = updateRiver({ 
       pollutionLevel: Math.max(0, currentRiver.pollutionLevel - consumedAmount),
     });
     setRiver(updatedRiver);
@@ -1177,15 +1293,15 @@ const AppContent = () => {
     });
     return unsubscribe;
   }, []);
-
+  
   return (
     <div
       style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        width: "100vw",
-        boxSizing: "border-box",
+      display: "flex", 
+      flexDirection: "column", 
+      height: "100vh", 
+      width: "100vw",
+      boxSizing: "border-box",
         position: "relative",
       }}
     >
@@ -1225,14 +1341,14 @@ const AppContent = () => {
       {isUIVisible && (
         <div
           style={{
-            position: "absolute",
-            top: "10px",
-            left: "10px",
+        position: "absolute",
+        top: "10px",
+        left: "10px",
             right: "70px", // Leave space for toggle button
-            display: "flex",
+        display: "flex", 
             alignItems: "flex-start",
             gap: "10px",
-            zIndex: 1000,
+        zIndex: 1000,
             pointerEvents: "none",
             flexWrap: "wrap",
           }}
@@ -1244,8 +1360,8 @@ const AppContent = () => {
 
           {/* River Controls */}
           <div style={{ pointerEvents: "auto" }}>
-            <RiverControls river={river} setRiver={setRiver} />
-          </div>
+          <RiverControls river={river} setRiver={setRiver} />
+        </div>
 
           {/* Status displays */}
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-start" }}>
@@ -1255,7 +1371,7 @@ const AppContent = () => {
             <DissolvedOxygenDisplay currentDO={river.currentDissolvedOxygen} />
             <FishCountDisplay fishCount={fishCount} />
             <HyacinthCountDisplay hyacinthCount={hyacinthCount} />
-          </div>
+      </div>
 
           {/* Graphs */}
           <div style={{ display: "flex", gap: "10px" }}>
@@ -1264,30 +1380,30 @@ const AppContent = () => {
           </div>
         </div>
       )}
-
+      
       {/* Full screen simulation */}
-      <div
+      <div 
         ref={containerRef}
-        style={{
+        style={{ 
           width: "100vw",
           height: "100vh",
           overflow: "hidden",
           position: "relative",
         }}
       >
-        <Application
-          background={"#1099bb"}
-          resizeTo={containerRef}
-          autoDensity={true}
-        >
-          <AgentScene
-            river={river}
-            onNutrientConsumption={handleNutrientConsumption}
+          <Application 
+            background={"#1099bb"} 
+            resizeTo={containerRef}
+            autoDensity={true}
+          >
+          <AgentScene 
+            river={river} 
+            onNutrientConsumption={handleNutrientConsumption} 
             onPollutionConsumption={handlePollutionConsumption}
             onCurrentDOChange={handleCurrentDOChange}
             onCountsChange={handleCountsChange}
           />
-        </Application>
+          </Application>
       </div>
     </div>
   );
