@@ -866,7 +866,7 @@ const SetupControls = ({
 
   const handleScenario3Setup = () => {
     // Set scenario 3 parameters from the screenshot
-    setHyacinthCount(20);
+    setHyacinthCount(10);
     setHyacinthReproduceRate(12);
     setFishCount(15);
     setFishReproduceRate(6);
@@ -875,7 +875,7 @@ const SetupControls = ({
     const scenario3River = updateRiver({
       flowDirection: 0.0,
       flowRate: 1,
-      totalNutrients: 10,
+      totalNutrients: 30,
       temperature: 30,
       sunlight: 0.8,
       pollutionLevel: 33,
